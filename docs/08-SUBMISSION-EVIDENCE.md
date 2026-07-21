@@ -61,30 +61,35 @@ Program visibly links each cell to source, trace, mutation count, inverse retent
 
 ## Validation record
 
-Record exact completion evidence here after the final matrix:
+Implementation commit `bac433fbc595c7fb9937aa242c2d88f1f4265d71`
+passed GitHub Actions run `29843801799`; deploy job `88680538721` published and
+smoke-tested that exact SHA at the apex domain.
 
 | Check | Local result | CI/production result |
 |---|---|---|
-| format | passed 2026-07-21 | pending CI |
-| lint | passed 2026-07-21 | pending CI |
-| typecheck | passed 2026-07-21 | pending CI |
-| unit | 43 passed across 9 files | pending CI |
-| Worker | 14 passed across 3 files | pending CI |
-| desktop E2E | 6 passed; mobile-only assertion skipped | pending CI |
-| mobile E2E | 6 passed; desktop-only protocol journey skipped | pending CI |
-| build | passed; known non-blocking Pixi chunk warning | pending CI |
-| secret scan | passed for source and build output | pending CI |
-| license scan | passed for 27 direct dependencies | pending CI |
-| live GPT-5.6 | pending post-deploy | pending |
-| AI-disabled fallback | pending post-deploy | pending |
-| exact deployed commit | pending | pending |
+| format | passed 2026-07-21 | passed, run `29843801799` |
+| lint | passed 2026-07-21 | passed, run `29843801799` |
+| typecheck | passed 2026-07-21 | passed, run `29843801799` |
+| unit | 43 passed across 9 files | passed, run `29843801799` |
+| Worker | 14 passed across 3 files | passed, run `29843801799` |
+| desktop E2E | 6 passed; mobile-only assertion skipped | passed, run `29843801799` |
+| mobile E2E | 6 passed; desktop-only protocol journey skipped | passed, run `29843801799` |
+| build | passed; known non-blocking Pixi chunk warning | passed, run `29843801799` |
+| secret scan | passed for 121 repository files and build output | passed, run `29843801799` |
+| license scan | passed for 27 direct dependencies | passed, run `29843801799` |
+| live GPT-5.6 | production Luna legal selection, Designer validation/commit, and Ruby resonance trigger passed | passed at `https://boardgamecomputer.com/judge` |
+| AI-disabled fallback | forced HTTP 503 for both AI endpoints; legal Luna fallback and labelled Designer example passed on Pixel 7 viewport | passed at `https://boardgamecomputer.com/judge` |
+| exact deployed commit | `bac433fbc595c7fb9937aa242c2d88f1f4265d71` | production smoke passed for `/` and `/judge`; deploy job `88680538721` |
 
 ## Screenshot record
 
 Local post-reset images are `evidence/local/prism-foundry-after-1440x900.png`,
 `prism-foundry-after-1280x800.png`, and
-`prism-foundry-after-pixel7.png`. `docs/17-PRODUCT-RESET.md` links them beside
-the rejected historical baseline. Production images remain pending deployment.
+`prism-foundry-after-pixel7.png`. Exact production captures are
+`prism-foundry-production-1440x900.png`,
+`prism-foundry-production-1280x800.png`, and
+`prism-foundry-production-pixel7.png`. `docs/17-PRODUCT-RESET.md` links them
+beside the rejected historical baseline.
 
 ## Owner-only evidence
 

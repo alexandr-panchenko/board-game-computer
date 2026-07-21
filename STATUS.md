@@ -13,7 +13,7 @@ Last design review: **2026-07-21**
 | M6 — Complete hero/judge flow | complete | Local validation, CI, exact production version, live AI path, and deployed desktop/mobile checks passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve the literal judge path while adding persistence | `405fe3a` |
 | M7 — Persistent shared rooms and rebase | complete | Local validation, CI, exact production version, two-browser convergence/reload/fork passed 2026-07-21 | None known beyond the existing bundle warning | Preserve ordering and capability boundaries during hardening | `d9ebcda` |
 | M8 — Reliability, mobile, security, and production verification | complete | Local/CI validation, apex exact-version smoke, 36-check production E2E, M7 rollback/M8 restore, and propagation-aware deploy passed 2026-07-21 | Known non-blocking Pixi chunk warning | Preserve the verified release while freezing evidence | `51dc131`, production gate `b1a270d` |
-| M9 — Evidence and release freeze | in progress | Prism Foundry local matrix passed: 43 unit, 14 Worker, 12 browser checks, build, secret/license scans 2026-07-21 | Replacement is not yet committed, deployed, or owner-approved | Review diff, commit/push, pass CI, deploy/verify exact commit, then await explicit owner product approval | Rejected baseline `6fe6e43`; reset record `b515361` |
+| M9 — Evidence and release freeze | in progress | Prism Foundry local matrix, CI run `29843801799`, deploy job `88680538721`, exact production smoke, 12-check production E2E, live GPT-5.6, and forced-offline paths passed 2026-07-21 | Replacement is technically verified but not owner-approved; non-blocking Pixi chunk warning remains | Await explicit owner product review; do not tag or request owner-only artifacts | Replacement `bac433f`; reset record `b515361`; rejected baseline `6fe6e43` |
 
 ## Current gate
 
@@ -22,8 +22,10 @@ owner rejected production baseline `6fe6e43` despite its green automated and
 production verification. Prior tests and screenshots are historical regression
 evidence, not approval. Decision D-057 and `docs/17-PRODUCT-RESET.md` require
 Prism Foundry to replace that production sample through chronological
-interpreted genesis cells. The replacement implementation is now under active
-validation; deployment and owner review are still pending. The
+interpreted genesis cells. Replacement commit `bac433f` passed the complete
+local and CI matrices, deployed successfully, and passed exact production,
+live GPT-5.6, forced-offline, desktop, and mobile verification. Owner review is
+still pending. The
 interpreter, transactional patches, deterministic runtime, AI boundaries,
 Durable Object ordering, reconnect/rebase/fork, deployment, security, and CI
 remain preserved. No owner-only submission artifact is part of this task. The

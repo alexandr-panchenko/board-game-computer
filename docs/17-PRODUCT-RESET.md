@@ -122,17 +122,22 @@ Validation and deployed identity are recorded in `STATUS.md` and
 `docs/08-SUBMISSION-EVIDENCE.md`. Even after they pass, this document's release
 gate remains unchanged until explicit human acceptance.
 
+Implementation commit `bac433fbc595c7fb9937aa242c2d88f1f4265d71`
+passed the complete local validation matrix, GitHub Actions run `29843801799`,
+deploy job `88680538721`, exact-version apex smoke, clean desktop and mobile
+production E2E, the live GPT-5.6 Luna and Designer path, and a separately forced
+AI-disabled path. This is technical verification, not product acceptance.
+
 ## Replacement viewport review
 
 The rejected images below remain historical comparison evidence only. The
-Prism Foundry images are the local post-reset candidate and must be recaptured
-from the exact deployed commit after deployment.
+Prism Foundry images were captured from the verified production replacement.
 
 | Viewport | Rejected baseline | Prism Foundry replacement |
 |---|---|---|
-| 1440 × 900 | [historical image](../evidence/local/ux-after-1440x900.png) | [current image](../evidence/local/prism-foundry-after-1440x900.png) |
-| 1280 × 800 | [historical image](../evidence/local/ux-after-1280x800.png) | [current image](../evidence/local/prism-foundry-after-1280x800.png) |
-| Pixel 7 | [historical image](../evidence/local/ux-after-pixel7.png) | [current image](../evidence/local/prism-foundry-after-pixel7.png) |
+| 1440 × 900 | [historical image](../evidence/local/ux-after-1440x900.png) | [production replacement](../evidence/local/prism-foundry-production-1440x900.png) |
+| 1280 × 800 | [historical image](../evidence/local/ux-after-1280x800.png) | [production replacement](../evidence/local/prism-foundry-production-1280x800.png) |
+| Pixel 7 | [historical image](../evidence/local/ux-after-pixel7.png) | [production replacement](../evidence/local/prism-foundry-production-pixel7.png) |
 
 Five-second review of the replacement candidate:
 
