@@ -1,8 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("judge route opens the responsive implementation shell", async ({
-  page,
-}) => {
+test("production shell opens the responsive judge route", async ({ page }) => {
   await page.goto("/judge");
 
   await expect(
@@ -12,4 +10,16 @@ test("judge route opens the responsive implementation shell", async ({
     page.getByRole("img", { name: /primitive top-down/i }),
   ).toBeVisible();
   await expect(page.getByText("Judge route ready")).toBeVisible();
+
+  const viewportFits = await page.evaluate(
+    () => document.documentElement.scrollWidth <= window.innerWidth,
+  );
+  expect(viewportFits).toBe(true);
+
+  const health = await page.request.get("/api/health");
+  expect(health.status()).toBe(200);
+  await expect(health.json()).resolves.toMatchObject({
+    ok: true,
+    phase: "vertical-slice",
+  });
 });

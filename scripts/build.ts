@@ -1,7 +1,11 @@
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { existsSync, unlinkSync } from "node:fs";
 
 const previewVarsPath = "dist/board_game_computer/.dev.vars";
+const commit = execFileSync("git", ["rev-parse", "HEAD"], {
+  encoding: "utf8",
+}).trim();
+const builtAt = new Date().toISOString();
 
 if (existsSync(previewVarsPath)) unlinkSync(previewVarsPath);
 
@@ -10,6 +14,8 @@ try {
     const child = spawn("vite", ["build"], {
       env: {
         ...process.env,
+        BUILD_COMMIT_SHA: process.env.BUILD_COMMIT_SHA ?? commit,
+        BUILD_TIMESTAMP: process.env.BUILD_TIMESTAMP ?? builtAt,
         WRANGLER_LOG_PATH:
           process.env.WRANGLER_LOG_PATH ??
           "/tmp/board-game-computer-wrangler.log",

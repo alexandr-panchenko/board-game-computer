@@ -29,7 +29,7 @@ export function App() {
       <section className="workspace" aria-label="Board game workspace">
         <aside className="panel script-panel">
           <h2>Script</h2>
-          <p className="muted">Implementation shell · {LANGUAGE_VERSION}</p>
+          <p className="muted">Vertical slice · {LANGUAGE_VERSION}</p>
           <ol>
             <li className="active-cell">Move Mara toward Azure Gate</li>
             <li>Rotate a connected room</li>
