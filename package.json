@@ -1,0 +1,53 @@
+{
+  "name": "board-game-computer",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.2.5",
+  "scripts": {
+    "dev": "vite",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit && tsc -p tests/workers/tsconfig.json --noEmit",
+    "test": "vitest run --config vitest.config.ts",
+    "test:workers": "WRANGLER_LOG_PATH=/tmp/board-game-computer-wrangler.log vitest run --config vitest.workers.config.ts",
+    "test:e2e": "playwright test",
+    "build": "bun scripts/build.ts",
+    "validate": "bun run format:check && bun run lint && bun run typecheck && bun run test && bun run test:workers && bun run test:e2e && bun run build && bun run secrets:check && bun run licenses:check",
+    "deploy": "bun run build && wrangler deploy",
+    "secrets:check": "bun scripts/check-secrets.ts",
+    "licenses:check": "bun scripts/check-licenses.ts",
+    "test:ai:live": "bun scripts/live-ai-placeholder.ts"
+  },
+  "dependencies": {
+    "acorn": "^8.17.0",
+    "acorn-walk": "^8.3.5",
+    "openai": "^6.48.0",
+    "pixi.js": "^8.19.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.45.1",
+    "@cloudflare/vitest-pool-workers": "^0.18.6",
+    "@cloudflare/workers-types": "^5.20260721.1",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "eslint": "^10.7.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.5",
+    "node-addon-api": "^8.5.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.65.0",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10",
+    "wrangler": "^4.112.0"
+  }
+}

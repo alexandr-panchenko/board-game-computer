@@ -1,22 +1,23 @@
 # Third-party notices
 
-This file must be updated from the installed lockfile before release. Do not
-assume that this design-time list is complete.
+Verified against the M1 lockfile on 2026-07-21. Transitive dependencies remain
+covered by their package license files and will be re-audited before release.
 
 ## Planned direct dependencies
 
-| Component | Purpose | Expected license | Verification required |
+| Component | Installed version | Purpose | License |
 |---|---|---|---|
-| React / React DOM | Application UI | MIT | Confirm installed package metadata |
-| Vite | Build tooling | MIT | Confirm installed package metadata |
-| Cloudflare Vite plugin / Wrangler | Workers development and deployment | Apache-2.0 or package-specific | Confirm exact installed packages |
-| Acorn / acorn-walk | JavaScript parsing and AST traversal | MIT | Confirm installed package metadata |
-| PixiJS | Replaceable 2D rendering adapter | MIT | Confirm installed package metadata |
-| OpenAI JavaScript SDK | Responses API integration | Apache-2.0 | Confirm installed package metadata |
-| Zod, if retained | Boundary validation | MIT | Remove if not needed; confirm metadata |
-| Vitest | Unit and integration tests | MIT | Confirm installed package metadata |
-| `@cloudflare/vitest-pool-workers` | Tests in Workers runtime | package-specific | Confirm metadata |
-| Playwright | Browser E2E tests | Apache-2.0 | Confirm installed package metadata |
+| React / React DOM | 19.2.7 | Application UI | MIT |
+| Vite / React plugin | 8.1.5 / 6.0.3 | Build tooling | MIT |
+| Cloudflare Vite plugin / Wrangler | 1.45.1 / 4.112.0 | Workers development and deployment | MIT / MIT OR Apache-2.0 |
+| Acorn / acorn-walk | 8.17.0 / 8.3.5 | JavaScript parsing and AST traversal | MIT |
+| PixiJS | 8.19.0 | Replaceable 2D rendering adapter | MIT |
+| OpenAI JavaScript SDK | 6.48.0 | Responses API integration | Apache-2.0 |
+| Zod | 4.4.3 | Boundary validation | MIT |
+| Vitest / Workers pool | 4.1.10 / 0.18.6 | Unit and Worker integration tests | MIT |
+| Playwright | 1.61.1 | Browser E2E tests | Apache-2.0 |
+| TypeScript / typescript-eslint / ESLint | 5.9.3 / 8.65.0 / 10.7.0 | Static analysis | Apache-2.0 / MIT / MIT |
+| Prettier | 3.9.5 | Formatting | MIT |
 
 ## Asset provenance
 

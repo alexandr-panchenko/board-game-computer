@@ -3,8 +3,9 @@
 > **Working title.** Describe, play, and rewrite a board game in one shared
 > room—people and GPT-5.6 operate the same safe, reversible tabletop language.
 
-**Build Week status:** product and architecture frozen; implementation starts
-from this repository packet.
+**Build Week status:** Milestone 1 establishes the reproducible application,
+Worker, and test harness. The visible tabletop is still an implementation shell;
+runtime and game behavior arrive in the following milestones.
 
 ## Live demo
 
@@ -57,23 +58,22 @@ seat.
 
 ## Setup
 
-Prerequisites:
-
-- Bun;
-- a Cloudflare account with Workers and Durable Objects;
-- an OpenAI API project and server-side key;
-- GitHub repository secrets for deployment.
-
-After Milestone 1 is implemented:
+Prerequisite: Bun 1.2.5 or a compatible newer 1.x release. A Cloudflare login
+and OpenAI key are not required for the deterministic app shell or ordinary
+validation.
 
 ```bash
-bun install
-cp .env.example .dev.vars
-# Add OPENAI_API_KEY only to .dev.vars; never commit it.
+bun install --frozen-lockfile
 bun run dev
 ```
 
-The deterministic demo and tests must still work with `AI_ENABLED=false`.
+Open <http://localhost:5173/> or <http://localhost:5173/judge>. The Vite server
+runs the Worker in `workerd`, so `/api/health` is available alongside the React
+app.
+
+Live AI work begins in M5. When needed, copy `.env.example` to the already
+ignored `.dev.vars` and set `OPENAI_API_KEY` there only. The deterministic demo
+and all ordinary tests must continue to work with `AI_ENABLED=false`.
 
 ## Tests and validation
 
@@ -89,6 +89,10 @@ bun run secrets:check
 bun run licenses:check
 bun run validate
 ```
+
+`bun run validate` executes every non-live check above. Playwright needs its
+Chromium binary once per machine: `bunx playwright install chromium`. Live AI
+tests are deliberately separate and opt-in.
 
 See `docs/06-TEST-PLAN.md` for exact coverage, performance budgets, live-AI test
 policy, and acceptance gates.

@@ -15,6 +15,24 @@ not evidence.
 - Primary Codex `/feedback` Session ID: store securely and enter in Devpost —
   `PENDING`
 
+## Milestone validation log
+
+### M1 — Repository and reproducible environment
+
+- Date: 2026-07-21
+- Frozen install: `bun install --frozen-lockfile` checked 238 installs across
+  315 packages with no changes.
+- Full non-live validation: `bun run validate` passed formatting, ESLint,
+  strict TypeScript, one unit test, one Workers-runtime test, two Playwright
+  tests (desktop and mobile), production build, tracked/build-output secret
+  scan, and 26-direct-dependency license scan.
+- CI workflow: `.github/workflows/validate.yml`.
+- Smoke tests: `tests/unit/versions.test.ts`,
+  `tests/workers/health.test.ts`, and `tests/e2e/judge-shell.spec.ts`.
+- Initial implementation tree: `src/app`, `src/shared`, `src/worker`,
+  `scripts`, and `tests/{unit,workers,e2e}`.
+- Commit SHA: `PENDING_M1_COMMIT`.
+
 ## Requirements and judging evidence
 
 | Status | Requirement / criterion | Claim to verify | Exact evidence required | URL/file/video timestamp | Verification method |
