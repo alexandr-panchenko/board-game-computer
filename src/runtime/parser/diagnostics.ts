@@ -1,6 +1,7 @@
 import type { Node } from "estree";
 
-export type DiagnosticPhase = "parse" | "validate" | "execute" | "conflict";
+export type DiagnosticPhase =
+  "parse" | "validate" | "execute" | "trigger" | "invariant" | "conflict";
 
 export interface RuntimeDiagnostic {
   code: string;

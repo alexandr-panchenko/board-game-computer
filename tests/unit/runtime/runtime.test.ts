@@ -119,6 +119,31 @@ describe("reversible runtime", () => {
     expect(materialize(runtime, runtime.bindings().observed!)).toEqual([1, 5]);
   });
 
+  it("reversibly deletes record fields and splices arrays", () => {
+    const runtime = new RoomRuntime();
+    execute(
+      runtime,
+      `
+        const record = { keep: 1, remove: 2 };
+        const removedField = delete record.remove;
+        const values = [1, 2, 3, 4];
+        const removedItems = values.splice(1, 2, 8, 9);
+      `,
+    );
+    expect(materialize(runtime, runtime.bindings().record!)).toEqual({
+      keep: 1,
+    });
+    expect(materialize(runtime, runtime.bindings().removedField!)).toBe(true);
+    expect(materialize(runtime, runtime.bindings().values!)).toEqual([
+      1, 8, 9, 4,
+    ]);
+    expect(materialize(runtime, runtime.bindings().removedItems!)).toEqual([
+      2, 3,
+    ]);
+    expect(runtime.undo()).toBe(true);
+    expect(runtime.bindings().record).toBeUndefined();
+  });
+
   it("produces source-located validation diagnostics", () => {
     const runtime = new RoomRuntime();
     const unsupported = runtime.executeCell("while (true) {};");

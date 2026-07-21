@@ -82,6 +82,39 @@ not evidence.
   commit, inverse-patch undo, and forward-patch redo through `/judge`.
 - Implementation commit: `f902c0a` (pushed to `origin/main`).
 
+### M4 — Table framework and complete deterministic sample
+
+- Date: 2026-07-21.
+- Framework architecture: `src/runtime/framework` stores registries, PRNG
+  state, actions, scenarios, invariants, events, turn state, and results inside
+  `TransactionalStore`; human, fallback-AI, undo, redo, and drag all use the
+  same materialized action path.
+- Geometry architecture: `src/geometry` implements renderer-independent line,
+  cubic Bézier, SVG-style arc, transform, bounds, containment, intersection,
+  overlap, nearest-point, z-hit, and rotation-aware room topology functions.
+  Four deterministic geometry tests passed without canvas pixel reads.
+- Sample architecture: `src/sample/shifting-vaults` encodes seven rooms, two
+  explorers, four relic/two hazard tokens, eight tactic cards, deck refill,
+  Threat/round pressure, all five registered actions, conservation invariants,
+  both endings, fallback policy, blue-gate Scenario, replay cells, and a real
+  action-replayed judge checkpoint.
+- Seed and hashes: seed `judge-vault-2026-4`; fresh setup
+  `152507e7fa707fcf`; Round 3 checkpoint `f8f507cc16eee333`; explorer victory in
+  Round 5 `fc5ec63f53cae28c`; vault collapse in Round 9 `7a7aa7605ab44473`.
+- Focused validation passed: 6 framework tests, 4 geometry tests, and 10
+  Shifting Vaults tests. Coverage includes PRNG rollback, FIFO/scenario order,
+  trigger cap, invariant rollback, all tactics, reshuffle, fallback AI,
+  reversible hero rule and occupied skip, action-only victory, and collapse.
+- Full `bun run validate` passed: 36 unit tests, 2 Workers tests, 12 Playwright
+  tests across desktop/mobile, production build, 90-file-plus-bundle secret
+  scan, and 27-direct-dependency license scan.
+- Browser gates passed on desktop and mobile: complete deterministic game,
+  44px semantic controls, Pixi projection, canvas drag producing exactly one
+  legal move cell, exact game undo/redo, Reset, and Fresh copy.
+- Local visual evidence: `evidence/local/m4-desktop-gameplay.png` and
+  `evidence/local/m4-mobile-gameplay.png` (gitignored local artifacts).
+- Implementation commit: `<pending implementation commit>`.
+
 ## Requirements and judging evidence
 
 | Status | Requirement / criterion | Claim to verify | Exact evidence required | URL/file/video timestamp | Verification method |

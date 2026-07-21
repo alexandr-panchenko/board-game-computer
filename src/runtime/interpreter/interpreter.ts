@@ -431,6 +431,21 @@ export class Interpreter {
     expression: UnaryExpression,
     scopeId: ScopeId,
   ): RuntimeValue {
+    if (expression.operator === "delete") {
+      if (expression.argument.type !== "MemberExpression")
+        throw fault(
+          "TS_UNSUPPORTED_NODE",
+          "execute",
+          "delete requires an object property",
+          expression.argument,
+        );
+      const object = this.evaluate(
+        expression.argument.object as Expression,
+        scopeId,
+      );
+      const key = this.memberKey(expression.argument, scopeId);
+      return this.store.fromHost(this.store.deleteProperty(object, key));
+    }
     const value = this.evaluate(expression.argument, scopeId);
     switch (expression.operator) {
       case "!":
@@ -777,6 +792,29 @@ export class Interpreter {
         const end =
           args[1] === undefined ? undefined : this.toNumber(args[1], node);
         return this.allocateArray(items.slice(start, end), node);
+      }
+      case "splice": {
+        const requestedStart =
+          args[0] === undefined ? 0 : Math.trunc(this.toNumber(args[0], node));
+        const start =
+          requestedStart < 0
+            ? Math.max(items.length + requestedStart, 0)
+            : Math.min(requestedStart, items.length);
+        const deleteCount =
+          args[1] === undefined
+            ? items.length - start
+            : Math.max(
+                0,
+                Math.min(
+                  Math.trunc(this.toNumber(args[1], node)),
+                  items.length - start,
+                ),
+              );
+        const after = [...items];
+        const removed = after.splice(start, deleteCount, ...args.slice(2));
+        this.checkCollectionSize(after, node);
+        this.store.replaceArray(receiver, after);
+        return this.allocateArray(removed, node);
       }
       case "includes":
         return this.store.fromHost(

@@ -293,6 +293,24 @@ export class TransactionalStore {
     });
   }
 
+  deleteProperty(reference: RuntimeValue, key: string): boolean {
+    if (reference.type !== "object")
+      throw new Error(`Cannot delete property ${key}`);
+    const object = this.getHeapObject(reference.objectId);
+    if (object.kind !== "record")
+      throw new Error("Array property deletion is unsupported");
+    const before = object.properties.get(key);
+    if (before === undefined) return true;
+    this.record({
+      kind: "property.set",
+      objectId: reference.objectId,
+      key,
+      before,
+      after: null,
+    });
+    return true;
+  }
+
   replaceArray(reference: RuntimeValue, items: RuntimeValue[]): void {
     if (reference.type !== "object")
       throw new Error("Expected array reference");

@@ -3,19 +3,22 @@
 > **Working title.** Describe, play, and rewrite a board game in one shared
 > room—people and GPT-5.6 operate the same safe, reversible tabletop language.
 
-**Build Week status:** Milestone 1 establishes the reproducible application,
-Worker, and test harness. The visible tabletop is still an implementation shell;
-runtime and game behavior arrive in the following milestones.
+**Build Week status:** Milestone 4 is locally validated. The repository now
+contains the reversible interpreter, transactional table framework, custom
+geometry kernel, Pixi projection, and complete deterministic `Shifting Vaults`
+sample. Live GPT-5.6 and persistent collaboration remain milestone work.
 
 ## Live demo
 
 - Main: <https://board-game-computer.sanocks.workers.dev/>
 - Judge route: <https://board-game-computer.sanocks.workers.dev/judge>
-- Current status: **M2 vertical slice deployed and verified**
+- Current status: **M2 production baseline verified; validated M4 deployment
+  pending the milestone commit**
 
-The deployed slice proves the React shell, Worker routes, static assets, and
-SQLite Durable Object binding. The reversible runtime and complete judge flow
-remain milestone work and are not represented as finished here.
+The deployed baseline proves the React shell, Worker routes, static assets, and
+SQLite Durable Object binding. The repository's deterministic game is complete;
+the full GPT-authored hero flow remains milestone work and is not represented
+as finished here.
 
 ## 60–90 second judge path
 
@@ -73,7 +76,8 @@ Open <http://localhost:5173/> or <http://localhost:5173/judge>. The Vite server
 runs the Worker in `workerd`, so `/api/health` is available alongside the React
 app.
 
-Live AI work begins in M5. When needed, copy `.env.example` to the already
+The local app opens at the real deterministic Round 3 checkpoint and requires
+no model call. Live AI work begins in M5. When needed, copy `.env.example` to the already
 ignored `.dev.vars` and set `OPENAI_API_KEY` there only. The deterministic demo
 and all ordinary tests must continue to work with `AI_ENABLED=false`.
 

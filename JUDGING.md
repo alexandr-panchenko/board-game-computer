@@ -7,27 +7,32 @@
 - User API key: not required
 - Best path: desktop or mobile modern browser
 
-Current implementation status: M2 is a deployed vertical slice. The complete
-steps below are the binding release target and are not yet available end to
-end.
+Current implementation status: M4 is locally validated and awaiting its
+milestone deployment. The deterministic path below works; live GPT-5.6 rule
+authoring and shared-room persistence are not yet available.
 
-## Steps
+## Current deterministic path
 
-1. Press **Next replay step** three times. Confirm that the highlighted source cell,
-   execution trace, and tabletop change match.
-2. Press **Take control**, then perform one highlighted legal action.
-3. Press **AI turn** and confirm that the AI chooses and performs a legal
-   registered action.
-4. Use the prepared Designer prompt: **“Whenever an explorer enters a blue
-   gate, rotate the connected room clockwise.”**
-5. Wait for the committed source cell, then move through a blue gate and
-   confirm that the connected room rotates and the trace reports the trigger.
-6. Continue or press **Return to demo checkpoint** to reproduce the path.
+1. Open `/judge`; confirm **Round 3**, **Mara turn**, **Threat 4 / 10**, seven
+   rooms, and the three canonical replay cells.
+2. Press **Move → azure-gate**. Confirm Mara moves, AP drops to 1, the trace is
+   shown, and the state hash changes.
+3. Press **Undo game cell**, then **Redo game cell**. Confirm Mara and the hash
+   return exactly each time.
+4. Press **Reset**. Confirm the Round 3 checkpoint returns.
+5. Press **End turn**, then **Run Ivo fallback turn**. Confirm the labelled
+   deterministic fallback performs only registered legal actions.
+6. Press **Fresh copy**. Confirm Round 1, Threat 2, and both explorers in the
+   Gatehouse.
+
+The automated browser path also plays from the checkpoint to Mara escaping
+with two relics and separately proves vault collapse.
 
 ## Expected visible outcome
 
-A single shared program drives replay, direct manipulation, AI play, and live
-rule changes. The game remains deterministic and playable after the new rule.
+A deterministic program drives direct manipulation, fallback-AI play, exact
+undo/redo, reset, and both real endings. Live Designer rule changes arrive in
+M5 and are not claimed by this milestone.
 
 ## If the AI API is unavailable
 
