@@ -13,24 +13,23 @@ Last design review: **2026-07-21**
 | M6 — Complete hero/judge flow | complete | Local validation, CI, exact production version, live AI path, and deployed desktop/mobile checks passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve the literal judge path while adding persistence | `405fe3a` |
 | M7 — Persistent shared rooms and rebase | complete | Local validation, CI, exact production version, two-browser convergence/reload/fork passed 2026-07-21 | None known beyond the existing bundle warning | Preserve ordering and capability boundaries during hardening | `d9ebcda` |
 | M8 — Reliability, mobile, security, and production verification | complete | Local/CI validation, apex exact-version smoke, 36-check production E2E, M7 rollback/M8 restore, and propagation-aware deploy passed 2026-07-21 | Known non-blocking Pixi chunk warning | Preserve the verified release while freezing evidence | `51dc131`, production gate `b1a270d` |
-| M9 — Evidence and release freeze | in progress | Human-UX correction passed local validation, CI/deploy, clean desktop/mobile production checks, live GPT-5.6, and deployed fallback 2026-07-21 | Owner eligibility/video/Session ID/copy/submission and final tag remain intentionally blocked | Preserve the verified human-first candidate; await only owner artifacts without finalizing M9 | `f2d7130` UX candidate; run `29830796839` |
+| M9 — Evidence and release freeze | in progress | Baseline `6fe6e43` was technically verified but explicitly rejected by the product owner 2026-07-21 | Shifting Vaults does not prove room-as-program; replacement product is not owner-approved | Replace the sole production sample with interpreted Prism Foundry, validate and deploy it, then await explicit owner product approval | Rejected baseline `6fe6e43` |
 
 ## Current gate
 
-**M9 REMAINS IN PROGRESS; DO NOT TAG.** The human-UX correction passes the full
-local matrix: 50 unit, 14 Worker, and 42 desktop/mobile E2E checks plus format,
-lint, strict typecheck, build, repository/build secret scan, and 27 direct
-dependency licenses. Commits `d2ea30a` and `f2d7130` are pushed. GitHub Actions
-run `29830796839` passed validation and deployed the exact commit; apex version
-and security smoke passed. Clean Chromium checks of `/` and `/judge` passed at
-1440 × 900 and Pixel 7 with no console errors. The production live path passed
-with HTTP 200 from Luna and Designer, a locally validated committed rule, and a
-visible rule trigger; the deployed labelled fallback passed independently.
-`docs/16-HUMAN-UX-AUDIT.md` records the audit, matched captures, and five-second
-review. Intentional owner blockers remain: official eligibility, narrated
-video, primary `/feedback` Session ID, author-voice copy, prior-work/physical-
-device attestations, and Devpost submission. M9 remains in progress until those
-external requirements exist; do not create `build-week-submission` early.
+**AWAITING OWNER PRODUCT APPROVAL. M9 REMAINS IN PROGRESS; DO NOT TAG.** The
+owner rejected production baseline `6fe6e43` despite its green automated and
+production verification. The failure is product-level: Shifting Vaults is
+assembled by bespoke TypeScript and its Program view does not expose the real
+creation and complete history of the tabletop. Prior tests and screenshots are
+historical regression evidence, not approval. Decision D-057 and
+`docs/17-PRODUCT-RESET.md` require Prism Foundry to replace the sole production
+sample and to be created by chronological interpreted genesis cells. The
+interpreter, transactional patches, deterministic runtime, AI boundaries,
+Durable Object ordering, reconnect/rebase/fork, deployment, security, and CI
+remain preserved. No owner-only submission artifact is part of this task. The
+release stays **AWAITING OWNER PRODUCT APPROVAL** after implementation and
+deployment until the owner explicitly accepts the replacement.
 
 ## Cut line
 

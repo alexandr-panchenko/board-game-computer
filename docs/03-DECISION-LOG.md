@@ -60,6 +60,7 @@ Status values: `accepted`, `rejected`, `deferred`, `superseded`.
 | D-054 | 2026-07-21 | accepted | Prior prototype is disclosed, but no old code/assets are imported by default. | Protects Build Week eligibility and makes new work auditable. |
 | D-055 | 2026-07-21 | accepted | Feature cut line is after the complete single-room M6 judge path. | Collaboration polish may be cut before weakening deployment, interpreter, GPT validation, or complete-game proof. |
 | D-056 | 2026-07-21 | accepted | Each client keeps at most one canonical proposal in flight; the server appends executable cells only when their base equals the current room head. | Later optimistic actions stay queued locally, while stale operations rebase before they can enter the canonical log. |
+| D-057 | 2026-07-21 | accepted | Owner rejects production baseline `6fe6e43` and replaces Shifting Vaults with Prism Foundry as the sole production sample. | Supersedes D-042 and all Shifting Vaults-specific hero/sample decisions. The replacement must be created by real interpreted genesis cells and projected from runtime state; the verified interpreter, patches, AI boundaries, rooms, rebase, and deployment platform remain unchanged. Details and acceptance gate are recorded in `docs/17-PRODUCT-RESET.md`. |
 
 ## Architecture changes that require a new accepted decision
 
