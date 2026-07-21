@@ -1,0 +1,33 @@
+# Dependencies and build output
+node_modules/
+dist/
+.wrangler/
+.worker-configuration.d.ts
+coverage/
+playwright-report/
+test-results/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# Local tools and editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+
+# Logs and temporary files
+*.log
+.tmp/
+tmp/
+
+# Generated local evidence; curated evidence belongs in docs/08-SUBMISSION-EVIDENCE.md
+evidence/local/
