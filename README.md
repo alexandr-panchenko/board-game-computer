@@ -71,6 +71,9 @@ Prerequisite: Bun 1.2.5 or a compatible newer 1.x release. A Cloudflare login
 and OpenAI key are not required for the deterministic app shell or ordinary
 validation.
 
+Dependency lifecycle scripts are disabled in `bunfig.toml`; the frozen lockfile
+contains the prebuilt platform packages required by the toolchain.
+
 ```bash
 bun install --frozen-lockfile
 bun run dev
@@ -157,14 +160,32 @@ No OpenAI secret is shipped to the browser.
 
 ## Codex collaboration
 
-The primary Codex build session must implement the repository milestone by
-milestone using `CODEX_KICKOFF.md` and record its `/feedback` Session ID for the
-submission. The README will be updated with concrete examples of where Codex
-accelerated interpreter implementation, Cloudflare integration, testing,
-rendering, and reliability work.
+This repository was implemented through one primary Codex build session using
+the frozen product packet and milestone contract. Concrete examples:
 
-Do not submit generic claims. Link each claim to commits, files, test output, or
-video timestamps in `docs/08-SUBMISSION-EVIDENCE.md`.
+- Codex built the custom parser/validator/interpreter, transactional store,
+  forward/inverse patches, deterministic hashes, and pending-tail rebase in
+  `src/runtime/**` (`f902c0a`), with rollback, closure, fuel, determinism, and
+  no-full-replay tests.
+- It implemented the original Shifting Vaults framework, geometry kernel, Pixi
+  projection, semantic actions, both endings, and desktop/mobile interaction
+  (`e5732aa`).
+- It integrated GPT-5.6 through server-only strict Responses API tools,
+  speculative Designer validation/repair, opaque legal AI options, budgets,
+  cancellation, and deterministic fallback (`aab81ed`, `51dc131`).
+- It built hashed-capability Durable Object rooms, hibernatable WebSockets,
+  exact-head sequencing, optimistic one-in-flight rebase, reconnect, timeline,
+  and persistent prefix fork (`d9ebcda`).
+- It maintained tests, status, evidence, deployment smoke, production rollback,
+  and release hardening milestone by milestone. The final matrix has 50 unit,
+  14 Worker, and 36 desktop/mobile browser checks.
+
+The human froze the core product and engineering decisions before
+implementation: room-as-program, a reversible interpreter instead of `eval`,
+patch-based undo/rebase, no server simulation, registered Player authority,
+top-down replaceable rendering, one complete game, cooperative security, and
+the explicit scope kill list. The primary `/feedback` Session ID still must be
+obtained from this session and entered privately in Devpost.
 
 ## Key human decisions
 

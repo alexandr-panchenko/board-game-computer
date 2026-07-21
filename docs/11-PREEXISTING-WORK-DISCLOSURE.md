@@ -27,9 +27,9 @@ Unless this file is updated with exact details:
 - **no prior deployment is presented as Build Week work**.
 
 Conceptual experience and general engineering knowledge are not represented as
-new inventions, but all repository implementation, tests, sample game, UX,
-Cloudflare deployment, OpenAI integration, generated art, and documentation are
-planned as new Build Week work.
+new inventions. All repository implementation, tests, sample game, UX,
+Cloudflare deployment, OpenAI integration, and documentation were created as
+new Build Week work. Static generated art was not retained.
 
 ## New Build Week work to evidence
 
@@ -44,7 +44,7 @@ The final repository should show dated evidence for:
 - GPT-5.6 Designer and AI-player integration;
 - Cloudflare Worker/Durable Object deployment;
 - responsive judge experience, fallbacks, tests, and evidence;
-- static AI-generated assets if retained.
+- reliability/security hardening and production rollback evidence.
 
 ## If any prior artifact is reused
 

@@ -1,0 +1,4 @@
+[install]
+# All required native packages ship locked prebuilt artifacts. Avoid executing
+# transitive lifecycle scripts or racing their optional packages on clean CI.
+ignoreScripts = true

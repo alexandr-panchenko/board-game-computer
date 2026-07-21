@@ -6,9 +6,13 @@ not evidence.
 
 ## Release identifiers
 
-- Production URL: `PENDING`
-- Judge URL: `PENDING`
-- Repository URL: `PENDING`
+- Production URL: `https://boardgamecomputer.com/` — candidate verified;
+  tagged-commit comparison pending
+- Judge URL: `https://boardgamecomputer.com/judge` — candidate verified;
+  tagged-commit comparison pending
+- Repository URL:
+  `https://github.com/alexandr-panchenko/board-game-computer` — public clone
+  verified; release tag pending
 - Public video URL: `PENDING`
 - Submission commit: `PENDING`
 - Submission tag: `build-week-submission` — `PENDING`
@@ -324,51 +328,76 @@ not evidence.
   Cloudflare version `bd58ef18-6ffa-4fe3-b45b-cfc5ffc1c574` is at 100%; the
   CI exact-version/security smoke and a separate apex smoke both passed.
 
+## M9 release-candidate evidence
+
+- M8 closure/M9 start commit `a2cbde501931373017a8213373aa3a2d52a39501`
+  passed both GitHub Actions jobs in run
+  `https://github.com/alexandr-panchenko/board-game-computer/actions/runs/29815090407`;
+  a separate exact-commit apex smoke passed.
+- A first fresh public clone exposed a Bun 1.2.5 lifecycle race: transitive
+  `sharp` tried an unnecessary source build before its installed optional
+  prebuilt package was usable. The failure was not hidden. `bunfig.toml` now
+  disables dependency lifecycle scripts; all required native packages remain
+  locked prebuilt artifacts.
+- A second untouched public clone with that configuration installed 235
+  packages successfully on its first `bun install --frozen-lockfile`, loaded
+  `sharp` successfully, passed strict TypeScript, and passed all 14 Worker
+  tests. A full committed clean-clone repeat remains required before tagging.
+- The working-tree M9 candidate passed frozen install, 50 unit tests, 14 Worker
+  tests, 36 desktop/mobile E2E checks, two production builds, a
+  111-file-plus-build secret scan, and 27 direct dependency licenses. The exact
+  grep command reported only tracked documentation examples of the variable
+  name/pattern, not assigned secret values.
+- Conservative eligibility, rubric, first-impression, and browser-path
+  self-audits are preserved in `docs/15-RELEASE-REVIEW.md`. They explicitly
+  leave owner eligibility, public video, primary Session ID, author-voice copy,
+  final tag, and submitted confirmation unproven.
+
 ## Requirements and judging evidence
 
 | Status | Requirement / criterion | Claim to verify | Exact evidence required | URL/file/video timestamp | Verification method |
 |---|---|---|---|---|---|
-| PENDING | Working project | Production app consistently loads and functions as described | Clean-browser production E2E result, health endpoint, screenshot | `<prod>/`, `<prod>/api/health`, artifact path | Open incognito and run smoke test |
-| PENDING | Apps for Your Life category | Product serves consumer creativity/playtesting | Product brief plus working first screen and Devpost category screenshot | `docs/01-PRODUCT-BRIEF.md`, Devpost screenshot | Compare category wording to demo |
-| PENDING | New/meaningful Build Week work | Repository implementation is new and prior exploration is disclosed | Initial/final commit history, Codex session dates, disclosure file | `docs/11-PREEXISTING-WORK-DISCLOSURE.md`, Git log | Audit dates and reused files |
-| PENDING | Codex use | Primary Codex session built majority of core functionality | `/feedback` Session ID, commit history, README concrete examples | Session ID in form; README section; commits | Match session work to core files |
-| PENDING | GPT-5.6 use | GPT-5.6 authors a validated room cell and AI player chooses a legal action | Integration files, live trace, committed cell, video timestamps | `src/worker/ai/*`, video `mm:ss` | Inspect code and run live path |
-| PENDING | Free testing access | Judge can use app without payment | Incognito path recording | `<prod>/judge`, video timestamp | No account/payment prompt |
-| PENDING | No login / BYOK | Judge path needs no registration or user key | JUDGING steps and clean-browser screenshot | `JUDGING.md`, screenshot | Follow instructions literally |
+| CANDIDATE PASS — tag pending | Working project | Production app consistently loads and functions as described | 36/36 production E2E, smoke, screenshots | `https://boardgamecomputer.com/`; M8 evidence above | Repeat on tagged commit |
+| PENDING — owner form | Apps for Your Life category | Product serves consumer creativity/playtesting | Product brief, first screen, selected-category screenshot | `docs/01-PRODUCT-BRIEF.md`; `evidence/local/m8-production-desktop.png` | Owner selects one category and records form |
+| CANDIDATE PASS — attestation pending | New/meaningful Build Week work | New implementation and prior exploration are distinguished | Dated history and disclosure | `docs/11-PREEXISTING-WORK-DISCLOSURE.md`; commits `9e78db4..a2cbde5` | Owner completes disclosure attestation |
+| PENDING — Session ID | Codex use | Primary session built core functionality | Commit history, README examples, `/feedback` ID | README Codex section; milestone commits; private ID missing | Owner obtains primary ID |
+| CANDIDATE PASS — video pending | GPT-5.6 use | Designer authors validated source and AI selects legal option | Integration files and bounded live M5/M6 trace | `src/worker/ai/**`; M5/M6 evidence above | Repeat live on final candidate and add video timestamps |
+| CANDIDATE PASS — tag pending | Free testing access | Judge can use app without payment | Clean production browser path | `https://boardgamecomputer.com/judge` | Recheck tagged commit incognito |
+| CANDIDATE PASS — tag pending | No login / BYOK | Judge path needs no registration or user key | JUDGING guide and clean screenshots | `JUDGING.md`; M8 desktop/mobile screenshots | Recheck tagged commit incognito |
 | PENDING | Public demo video | Video is public YouTube, under three minutes, with audio | YouTube page and duration | `<youtube-url>` | Incognito playback |
 | PENDING | Video explains Codex and GPT-5.6 | Audio explicitly covers both | Transcript/timestamps | Video `mm:ss–mm:ss` | Listen and compare transcript |
-| PENDING | Repository access/license | Repo is public with MIT or organizer access is granted | Repo settings, LICENSE | `<repo-url>`, `LICENSE` | Open unauthenticated or verify invites |
-| PENDING | README completeness | Setup, tests, sample, Codex, human decisions, GPT usage are concrete | Final README sections | `README.md` | Fresh-reader audit |
+| CANDIDATE PASS — tag pending | Repository access/license | Repository is publicly cloneable and MIT licensed | Public clone and license | `https://github.com/alexandr-panchenko/board-game-computer`; `LICENSE` | Clone tagged repository unauthenticated |
+| CANDIDATE PASS — tag pending | README completeness | Setup, tests, sample, Codex, human decisions, GPT usage are concrete | Final README sections | `README.md` | Fresh-reader/tag audit |
 | PENDING | `/feedback` Session ID | Correct primary project thread ID entered | Devpost form screenshot/private record | Devpost submission | Human verification |
-| PENDING | English materials | UI, README, testing instructions, copy, and video are English | Screenshots/files/transcript | Multiple | Manual audit |
-| PENDING | Original/IP-safe assets | No commercial game trademarks, copied rules, or unlicensed art/music | Asset manifest, notices, video audio review | `THIRD_PARTY_NOTICES.md`, asset manifest | License/provenance audit |
-| PENDING | Technological Implementation | Custom reversible interpreter is real and non-trivial | Source files, rollback/rebase tests, architecture section | `src/runtime/**`, test output, video timestamp | Code review and execute tests |
-| PENDING | Reversible cells | Every successful cell records forward/inverse patches | Patch tests and runtime inspector | test names/output, screenshot | Verify hash round-trip |
-| PENDING | Atomic failure | Failed source leaves exact pre-cell state | Failure/hash test output | test artifact | Run targeted test |
-| PENDING | No full-room replay in rebase | Ordinary multiplayer rebase touches only local pending tail | Instrumented test and two-client trace | test output, video timestamp | Assert committed-history execute count is zero |
-| PENDING | Determinism | Independent clients/runtimes converge to same hash | convergence test output | test artifact | Run twice/two contexts |
-| PENDING | Complete game | Shifting Vaults can be played to real victory and collapse | E2E victory/loss traces and manual play recording | test artifacts, video/screenshot | Start fresh and finish |
+| PENDING — video | English materials | UI/docs are English; video/transcript must be English | Source/screenshots pass; transcript absent | UI, README, JUDGING; public video pending | Review final audio/transcript |
+| CANDIDATE PASS — video audit pending | Original/IP-safe assets | Original primitives/game; no external art/music; dependencies licensed | Notices and license scan | `THIRD_PARTY_NOTICES.md`; 27 direct licenses | Audit final video audio/thumbnail |
+| CANDIDATE PASS — tag/video pending | Technological Implementation | Custom reversible interpreter is non-trivial | Runtime sources and 50 unit tests | `src/runtime/**`; `tests/unit/**`; M3 evidence | Show in video and rerun tag |
+| CANDIDATE PASS — tag pending | Reversible cells | Successful cells record forward/inverse patches | Runtime/rollback tests and inspector | `tests/unit/rollback.test.ts`; runtime inspector E2E | Rerun tag |
+| CANDIDATE PASS — tag pending | Atomic failure | Failed source preserves pre-cell hash | Runtime/framework invariant/fuel tests | `tests/unit/runtime/runtime.test.ts`; `tests/unit/framework/framework.test.ts` | Rerun tag |
+| CANDIDATE PASS — video pending | No full-room replay in rebase | Ordinary rebase touches pending tail only | Instrumented rebase test and production two-client run | `tests/unit/runtime/rebase.test.ts`; M7/M8 evidence | Add brief video proof |
+| CANDIDATE PASS — tag pending | Determinism | Independent runtimes/clients converge | Determinism and two-context tests | `tests/unit/determinism.test.ts`; production 36/36 | Rerun tag |
+| CANDIDATE PASS — video pending | Complete game | Shifting Vaults reaches victory and collapse | Deterministic tests and desktop/mobile E2E | `tests/unit/sample/shifting-vaults.test.ts`; E2E real ending | Show continued playable state/video |
 | PENDING | Design coherence | First screen, replay, takeover, agent change form one clear experience | 90-second recording and first-impression review | video `00:00–01:30` | External review prompt |
-| PENDING | First-screen value | Working table appears before AI call | performance trace/screenshot | `<prod>/judge`, video `00:00` | Disable network/OpenAI and load |
-| PENDING | Guided causality | Highlighted cell and trace match visible table change | screenshot/video and E2E assertions | video `mm:ss` | Compare source ID/trace/entity |
-| PENDING | Human legal action | Direct manipulation/action list commits valid Player cell | E2E trace | video `mm:ss`, test output | Verify action source and state |
-| PENDING | AI legal action | Model/fallback chooses only a materialized legal action | AI fixture/live trace | video `mm:ss`, logs/test | Compare chosen ID to option list |
-| PENDING | Live rule change | Blue-gate Scenario is model-authored, validated, committed, and fires | source cell screenshot, trace, resulting rotation | video `mm:ss`, room export | Inspect committed source and effect |
-| PENDING | Repair loop | Invalid model output can repair without polluting log | mocked repair test and attempt telemetry | test output | Count committed vs failed candidates |
-| PENDING | AI fallback | App remains playable with AI disabled | AI-disabled E2E and labelled UI screenshot | test output, screenshot | Set `AI_ENABLED=false` |
-| PENDING | Reset/fresh copy | Judge path can be reproduced | repeated E2E and new room URL | JUDGING, test output | Run twice in clean state |
-| PENDING | Mobile support | Minimum mobile viewport completes judge path | Playwright mobile trace and real-device screenshot | artifact paths | Execute full path |
-| PENDING | Semantic controls | Key status/actions exist outside canvas | DOM snapshot/accessibility scan/manual | test output, screenshot | Keyboard/browser-agent check |
-| PENDING | Shared room | Two clients order cells, reconnect, and converge | two-browser E2E/video | test output, video timestamp | Simultaneous actions and reload |
-| PENDING | Replay/fork | Local patch time travel and persistent prefix fork work | E2E, parent/child URLs, hashes | test output | Inspect parent unchanged |
-| PENDING | Custom geometry | Zone relations use vector kernel, not pixel hit testing | geometry source/tests/debug overlay | `src/geometry/**`, artifact | Code review and fixtures |
-| PENDING | Static AI-generated art | Art was generated specifically for project and has fallback/provenance | asset manifest, prompt/model/date, fallback screenshot | manifest/files | Disable asset load and compare |
-| PENDING | Secret safety | No OpenAI/Cloudflare/capability secret in tracked files or bundle | secret scan output and manual bundle search | CI artifact | Run scan on tagged commit |
-| PENDING | Cost control | Per-room/global budgets and kill switch work | Worker tests and forced-limit screenshot | test output | Trigger limits in test env |
-| PENDING | Cloudflare deployment | Worker, static assets, SQLite DO, and WebSockets are deployed | Wrangler config, deploy run, health, room test | files/Actions URL | Production smoke |
-| PENDING | Test reproducibility | Clean clone passes documented validation | clean-clone log/CI | Actions run URL | New checkout with frozen lockfile |
+| CANDIDATE PASS — video pending | First-screen value | Table appears before any AI call | Zero-request E2E and screenshots | `tests/e2e/judge-shell.spec.ts`; M8 screenshots | Show at video 00:00 |
+| CANDIDATE PASS — video pending | Guided causality | Source, trace, and table advance together | Hero E2E and M6 evidence | E2E judge-path test | Add video timestamp |
+| CANDIDATE PASS — video pending | Human legal action | Registered Player action commits | Hero/drag E2E | E2E tests lines 162/267 | Add video timestamp |
+| CANDIDATE PASS — video pending | AI legal action | Live/fallback selects materialized option | M5 live result and AI tests | `src/app/ai-client.ts`; M5 evidence | Add video timestamp |
+| CANDIDATE PASS — exact live repeat pending | Live rule change | GPT-authored Scenario validates, commits, and fires | M5/M6 live trace and hero test | M6 9,764 ms trace | Repeat on final commit and video |
+| CANDIDATE PASS — tag pending | Repair loop | Invalid candidates repair without log pollution | Mock repair tests | `tests/unit/ai/ai.test.ts`; mocked AI E2E | Rerun tag |
+| CANDIDATE PASS — tag pending | AI fallback | AI-disabled path remains playable | 36/36 AI-disabled and budget screenshot | M8 evidence and `m8-production-budget-fallback.png` | Rerun tag |
+| CANDIDATE PASS — tag pending | Reset/fresh copy | Judge path is reproducible | Reset/replay/fresh E2E | `JUDGING.md`; E2E reset test | Rerun tag |
+| CANDIDATE PASS — real-device pending | Mobile support | Pixel 7 viewport completes full path | 18/18 mobile and production screenshot | `m8-production-mobile.png` | Owner checks physical device |
+| CANDIDATE PASS — keyboard audit pending | Semantic controls | Status/actions exist outside canvas and are touch sized | DOM role/size tests | E2E semantic/mobile tests | Owner keyboard pass |
+| CANDIDATE PASS — video pending | Shared room | Two clients order, rebase, reconnect, converge | Production E2E and M7 hashes | M7/M8 evidence | Optional video proof |
+| CANDIDATE PASS — tag pending | Replay/fork | Patch timeline and persistent prefix fork work | Production E2E and parent/child evidence | M7 evidence | Rerun tag |
+| CANDIDATE PASS — tag pending | Custom geometry | Geometry is renderer-independent | Geometry sources/tests | `src/geometry/**`; geometry unit tests | Rerun tag |
+| CUT — no claim | Static AI-generated art | Optional art was not shipped | M8 cut record; original primitives remain | M8 evidence; `THIRD_PARTY_NOTICES.md` | Remove art checkbox/claim from copy |
+| CANDIDATE PASS — tag pending | Secret safety | No key/capability in tracked files or bundle | 109-file-plus-build secret scan | CI run `29814603946`; `scripts/check-secrets.ts` | Run exact grep/scan on tag |
+| CANDIDATE PASS — tag pending | Cost control | Per-room/global budgets and kill switch cap use | Worker tests and simulated budget screenshot | `tests/workers/ai.test.ts`; M8 budget artifact | Rerun tag |
+| CANDIDATE PASS — tag pending | Cloudflare deployment | Assets, SQLite DO, WebSockets deployed | Wrangler config, version, smoke, production rooms | M8 versions and run `29814603946` | Compare tag/version |
+| FIX IN VALIDATION | Test reproducibility | First clean install raced sharp lifecycle check; ignore-scripts fix passes untouched clone | Second fresh clone: 235 packages, sharp load, typecheck, 14 Worker tests | `bunfig.toml`; M9 log | Commit fix and rerun full clean checkout |
 | PENDING | Potential impact | Demo credibly shortens idea-to-playtest loop for target user | user narrative tied to working sequence | Devpost story + demo | Reviewer evaluates demonstrated path |
-| PENDING | Quality/novelty | One language unifies creation, play, AI actions, reversibility, and sharing | architecture plus visible demo | tech design, video | Rubric grader evidence review |
+| CANDIDATE PASS — video pending | Quality/novelty | One language unifies creation, play, AI actions, reversibility, and sharing | Architecture, product, review score | `docs/04-TECHNICAL-DESIGN.md`; `docs/15-RELEASE-REVIEW.md` | Add visible video evidence |
 | PENDING | Submission freeze | Production and materials correspond to tagged commit | version endpoint, tag, deploy metadata | `<prod>/api/version`, Git tag | Compare SHA everywhere |
 
 ## Screenshot targets

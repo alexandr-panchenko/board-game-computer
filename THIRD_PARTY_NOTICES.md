@@ -1,9 +1,10 @@
 # Third-party notices
 
-Verified against the M1 lockfile on 2026-07-21. Transitive dependencies remain
-covered by their package license files and will be re-audited before release.
+Verified against the release-candidate lockfile on 2026-07-21 by
+`bun run licenses:check`. Transitive dependencies remain covered by their
+package license files.
 
-## Planned direct dependencies
+## Direct dependencies
 
 | Component | Installed version | Purpose | License |
 |---|---|---|---|
@@ -21,13 +22,13 @@ covered by their package license files and will be re-audited before release.
 
 ## Asset provenance
 
-- `Shifting Vaults` game design, names, rule text, and source cells must be
-  original to this project.
-- AI-generated sample art must be generated specifically for this project and
-  recorded with prompt/date/model provenance in
-  `docs/08-SUBMISSION-EVIDENCE.md` or an asset manifest.
-- Primitive fallback art must be original SVG/canvas work or permissively
-  licensed with attribution here.
+- `Shifting Vaults` game design, names, rule text, and source cells are original
+  to this project.
+- The shipped tabletop visuals are original code-rendered vector primitives in
+  `src/render` and `src/geometry`; no external image, font, music, or commercial
+  tabletop asset is included.
+- Static AI-generated art was cut before release, so no generated-art claim or
+  asset provenance manifest is applicable.
 - Do not use commercial tabletop game art, logos, names, copied rules text,
   music, fonts, or screenshots.
 
