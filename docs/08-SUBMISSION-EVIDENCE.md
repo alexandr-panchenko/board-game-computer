@@ -80,7 +80,7 @@ not evidence.
 - Runtime inspector evidence: `evidence/local/m3-runtime-inspector.png`
   (gitignored local artifact); desktop and mobile Playwright both verified
   commit, inverse-patch undo, and forward-patch redo through `/judge`.
-- Implementation commit: `<pending implementation commit>`.
+- Implementation commit: `f902c0a` (pushed to `origin/main`).
 
 ## Requirements and judging evidence
 
