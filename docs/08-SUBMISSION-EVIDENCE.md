@@ -317,6 +317,12 @@ not evidence.
   another clean CI validation. Its immediate smoke raced edge propagation; the
   apex reported the exact follow-up commit seconds later. The smoke runner now
   keeps every assertion but retries for a bounded 30-second propagation window.
+- M8 final production gate commit
+  `b1a270de1adc8835c24a39e09e574d524e4c2030` passed both jobs in GitHub
+  Actions run
+  `https://github.com/alexandr-panchenko/board-game-computer/actions/runs/29814603946`.
+  Cloudflare version `bd58ef18-6ffa-4fe3-b45b-cfc5ffc1c574` is at 100%; the
+  CI exact-version/security smoke and a separate apex smoke both passed.
 
 ## Requirements and judging evidence
 
