@@ -13,17 +13,18 @@ Last design review: **2026-07-21**
 | M6 — Complete hero/judge flow | complete | Local validation, CI, exact production version, live AI path, and deployed desktop/mobile checks passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve the literal judge path while adding persistence | `405fe3a` |
 | M7 — Persistent shared rooms and rebase | complete | Local validation, CI, exact production version, two-browser convergence/reload/fork passed 2026-07-21 | None known beyond the existing bundle warning | Preserve ordering and capability boundaries during hardening | `d9ebcda` |
 | M8 — Reliability, mobile, security, and production verification | complete | Local/CI validation, apex exact-version smoke, 36-check production E2E, M7 rollback/M8 restore, and propagation-aware deploy passed 2026-07-21 | Known non-blocking Pixi chunk warning | Preserve the verified release while freezing evidence | `51dc131`, production gate `b1a270d` |
-| M9 — Evidence and release freeze | in progress | Working-tree full matrix and second fresh first-install/typecheck/Worker proof passed 2026-07-21 | Final committed clean-clone gate plus owner eligibility/video/Session ID/copy/submission remain | Commit reproducibility/evidence fixes, push, then rerun clean clone | — |
+| M9 — Evidence and release freeze | in progress | Exact committed clean clone, CI/deploy, apex smoke, and 10.6s live judge path passed 2026-07-21 | Owner eligibility/video/Session ID/copy/submission and final tag remain | Commit final machine-verifiable evidence, then hand off external blockers | `0758ccb` candidate |
 
 ## Current gate
 
-**M9 IN PROGRESS.** The release audit found and fixed a clean-install lifecycle
-race without adding a dependency: transitive scripts are disabled and a second
-untouched clone installed all locked prebuilt packages on its first attempt,
-loaded sharp, typechecked, and passed 14 Worker tests. The working-tree full
-matrix is green. Next is commit/push and an exact committed clean-clone rerun.
-Owner-only blockers remain eligibility attestation, narrated public video,
-primary `/feedback` Session ID, author-voice copy, and Devpost submission.
+**M9 BLOCKED ON OWNER ARTIFACTS.** Exact candidate `0758ccb` passed first-attempt
+clean install, the full local and CI matrices, deploy, apex smoke, and a 10.6 s
+live Luna-plus-Designer hero path. Machine-verifiable evidence is complete.
+Before the freeze commit/tag, the owner must confirm official eligibility,
+publish and verify the narrated video, obtain the primary `/feedback` Session
+ID, rewrite copy in their voice, complete prior-work/real-device attestations,
+and submit Devpost. M9 remains in progress until those external requirements
+exist; do not tag early.
 
 ## Cut line
 

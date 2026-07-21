@@ -103,8 +103,11 @@ Exactly five changes ranked by first-impression impact:
 
 Automated clean desktop/mobile production runs passed all 36 steps, including
 fallback, cancellation, reset, both endings, multiplayer convergence,
-reconnect, and fork, with no console-breaking errors. M6 separately recorded a
-9,764 ms bounded live Luna-plus-Designer hero path. The M9 exact-candidate live
-repeat and human screenshot/timing pass remain pending; therefore this audit is
-**NOT YET FINAL**.
-
+reconnect, and fork, with no console-breaking errors. The exact M9 production
+candidate then completed a real Luna-plus-Designer path in 10,606 ms: both
+responses were live, the locally validated Scenario committed and fired, and
+the game remained playable. `evidence/local/m9-production-live-complete.png`
+was visually checked and contains no capability or credential. Visible keyboard
+focus also passed with a 3 px solid outline on the first semantic action. A
+human physical-device/timed narration pass remains pending, so this audit is
+**CANDIDATE PASS, HUMAN PASS PENDING**.

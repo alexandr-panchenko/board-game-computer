@@ -352,6 +352,19 @@ not evidence.
   self-audits are preserved in `docs/15-RELEASE-REVIEW.md`. They explicitly
   leave owner eligibility, public video, primary Session ID, author-voice copy,
   final tag, and submitted confirmation unproven.
+- Exact committed clean checkout
+  `0758ccb0b0ed9c341fdd81291a91f79d27e89cf8` installed 235 packages on the
+  first frozen-install attempt, then passed 50 unit, 14 Worker, 36 E2E, build,
+  111-file-plus-build secret, 27-license, and clean-worktree gates. GitHub
+  Actions run `29816005889` also passed validation/deploy, and the apex smoke
+  reported the exact commit.
+- The exact production candidate completed the literal live path in 10,606 ms
+  with a live Luna choice and live Designer source; the validated Scenario
+  fired and the game remained playable. Gitignored visual evidence is
+  `evidence/local/m9-production-live-complete.png` (reviewed without secrets).
+- Keyboard navigation focused the first semantic action with the expected 3 px
+  solid outline. A reviewed 3:2 first-screen upload candidate is
+  `evidence/local/m9-thumbnail-candidate.png` (gitignored; no external assets).
 
 ## Requirements and judging evidence
 
@@ -395,7 +408,7 @@ not evidence.
 | CANDIDATE PASS — tag pending | Secret safety | No key/capability in tracked files or bundle | 109-file-plus-build secret scan | CI run `29814603946`; `scripts/check-secrets.ts` | Run exact grep/scan on tag |
 | CANDIDATE PASS — tag pending | Cost control | Per-room/global budgets and kill switch cap use | Worker tests and simulated budget screenshot | `tests/workers/ai.test.ts`; M8 budget artifact | Rerun tag |
 | CANDIDATE PASS — tag pending | Cloudflare deployment | Assets, SQLite DO, WebSockets deployed | Wrangler config, version, smoke, production rooms | M8 versions and run `29814603946` | Compare tag/version |
-| FIX IN VALIDATION | Test reproducibility | First clean install raced sharp lifecycle check; ignore-scripts fix passes untouched clone | Second fresh clone: 235 packages, sharp load, typecheck, 14 Worker tests | `bunfig.toml`; M9 log | Commit fix and rerun full clean checkout |
+| CANDIDATE PASS — tag pending | Test reproducibility | Exact committed clean clone passes first frozen install and full matrix | 235 packages; 50 unit; 14 Worker; 36 E2E; build/scan/licenses; clean tree | `bunfig.toml`; M9 evidence above; CI `29816005889` | Repeat/compare final tag |
 | PENDING | Potential impact | Demo credibly shortens idea-to-playtest loop for target user | user narrative tied to working sequence | Devpost story + demo | Reviewer evaluates demonstrated path |
 | CANDIDATE PASS — video pending | Quality/novelty | One language unifies creation, play, AI actions, reversibility, and sharing | Architecture, product, review score | `docs/04-TECHNICAL-DESIGN.md`; `docs/15-RELEASE-REVIEW.md` | Add visible video evidence |
 | PENDING | Submission freeze | Production and materials correspond to tagged commit | version endpoint, tag, deploy metadata | `<prod>/api/version`, Git tag | Compare SHA everywhere |
