@@ -39,8 +39,12 @@ not evidence.
 - Production URL: `https://board-game-computer.sanocks.workers.dev/`.
 - Judge URL: `https://board-game-computer.sanocks.workers.dev/judge`.
 - Implementation commit: `7d7f276`.
-- Active Cloudflare deployment version:
-  `92b20a95-496f-4042-b93a-4ea25623b78d`; deployment list showed 100% traffic.
+- Verified GitHub Actions deployment version:
+  `0d70d2dd-8cf4-4ec0-841e-5fcc6f19e59d`; deployment list showed 100% traffic
+  and `/api/version` reported commit `1ccf238502336a60735b6c61006d1e312745a81b`.
+- GitHub Actions run:
+  `https://github.com/alexandr-panchenko/board-game-computer/actions/runs/29801591144`;
+  both `validate` and `deploy` jobs completed successfully.
 - Verified production responses: `/` 200, `/judge` 200, `/api/health` returned
   `vertical-slice`, `/api/version` reported the deployed commit, and
   `/api/room-health` confirmed `RoomObject` with SQLite storage.
