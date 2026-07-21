@@ -44,13 +44,13 @@ preparation only; no application milestone has started.
 
 ## CI/CD prerequisites
 
-No GitHub Actions secrets are configured yet, and no suitable long-lived
-Cloudflare API token was present in the process environment.
+`CLOUDFLARE_ACCOUNT_ID` is configured in GitHub Actions. No suitable
+long-lived Cloudflare API token was present in the process environment.
 
-Required repository secrets:
+Repository secret status:
 
-- `CLOUDFLARE_ACCOUNT_ID`
-- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`: configured
+- `CLOUDFLARE_API_TOKEN`: still required
 
 In the Cloudflare Dashboard, open **My Profile > API Tokens > Create Token**,
 start from **Edit Cloudflare Workers**, and restrict the token to
