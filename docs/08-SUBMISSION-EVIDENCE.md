@@ -125,6 +125,44 @@ not evidence.
   shell, a complete deterministic explorer victory, and touch-sized semantic
   game controls.
 
+### M5 — GPT-5.6 Designer and AI-player integration
+
+- Date: 2026-07-21.
+- Integration boundary: `src/worker/ai` uses the OpenAI Responses API only in
+  Worker code. The Designer defaults to `gpt-5.6` with medium reasoning; the AI
+  player defaults to `gpt-5.6-luna` with low reasoning. Both use forced strict
+  function tools and `parallel_tool_calls: false`.
+- Official guidance checked during implementation: GPT-5.6 model guidance,
+  Responses function calling, strict schemas, structured output, and explicit
+  reasoning configuration at `https://developers.openai.com/api/docs/`.
+- Safety boundary: Zod validates every HTTP/tool envelope; the context builder
+  has a 48,000-character ceiling and redaction; source candidates parse,
+  validate, speculatively execute, and roll back to the exact prior hash before
+  commit. Failed candidates never enter the visible cell list.
+- Repair and action boundary: at most three total Designer attempts receive
+  structured diagnostics. The player sees only stable opaque option IDs,
+  labels, and consequences; literal arguments remain local and the chosen
+  option is revalidated immediately before `performAction`.
+- Cost/reliability boundary: SQLite `BudgetObject` enforces global daily request
+  and estimated-token limits plus per-room hourly limits. Requests have a
+  20-second timeout/cancellation path. `AI_ENABLED=false`, timeout, malformed
+  output, unknown/stale action, and budget failure preserve labelled
+  deterministic fallbacks.
+- Production secret readiness: Cloudflare lists `OPENAI_API_KEY` as a
+  `secret_text` binding. The value was never printed or written to tracked
+  files. The final client bundle contains no key marker or key-shaped value.
+- Bounded opt-in live smoke passed two calls: Designer resolved to
+  `gpt-5.6-sol`, used 201 input/111 output tokens, and its source passed local
+  validation; Player used `gpt-5.6-luna`, used 164 input/40 output tokens, and
+  selected one of two offered opaque options.
+- Full `bun run validate` passed 46 unit tests, 8 Workers tests, 16 Playwright
+  checks across desktop/mobile, production build, 104-file-plus-build-output
+  secret scan, and 27-direct-dependency license scan after the final
+  speculative-execution review.
+- Local visual evidence: `evidence/local/m5-designer-desktop.png` and
+  `evidence/local/m5-designer-mobile.png` (gitignored local artifacts).
+- Implementation commit: `<pending implementation commit>`.
+
 ## Requirements and judging evidence
 
 | Status | Requirement / criterion | Claim to verify | Exact evidence required | URL/file/video timestamp | Verification method |

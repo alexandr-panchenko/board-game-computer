@@ -8,7 +8,7 @@ declare global {
 
     interface GlobalProps {
       mainModule: typeof import("../../src/worker/index");
-      durableNamespaces: "RoomObject";
+      durableNamespaces: "RoomObject" | "BudgetObject";
     }
   }
 }

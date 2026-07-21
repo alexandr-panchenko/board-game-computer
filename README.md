@@ -3,22 +3,23 @@
 > **Working title.** Describe, play, and rewrite a board game in one shared
 > room—people and GPT-5.6 operate the same safe, reversible tabletop language.
 
-**Build Week status:** Milestone 4 is deployed and production-verified. The repository now
-contains the reversible interpreter, transactional table framework, custom
-geometry kernel, Pixi projection, and complete deterministic `Shifting Vaults`
-sample. Live GPT-5.6 and persistent collaboration remain milestone work.
+**Build Week status:** Milestone 5 is locally validated and awaiting its
+deployment commit. The repository now contains the reversible interpreter,
+complete deterministic `Shifting Vaults`, a server-only GPT-5.6 Designer,
+GPT-5.6 Luna legal-action selection, strict local validation/repair, and
+deterministic fallbacks. Persistent collaboration remains milestone work.
 
 ## Live demo
 
 - Main: <https://board-game-computer.sanocks.workers.dev/>
 - Judge route: <https://board-game-computer.sanocks.workers.dev/judge>
-- Current status: **M4 deterministic game deployed and verified; M5 GPT-5.6
-  integration in progress**
+- Current status: **M4 production verified; validated M5 deployment pending the
+  implementation commit**
 
-The deployed build proves the React shell, Worker routes, static assets, SQLite
-Durable Object binding, and complete deterministic game on desktop and mobile;
-the full GPT-authored hero flow remains milestone work and is not represented
-as finished here.
+The current deployed build proves the deterministic game on desktop and mobile.
+The repository's M5 build adds the GPT-authored rule and AI-seat paths, but this
+README does not claim those paths are live in production until deployment is
+verified.
 
 ## 60–90 second judge path
 

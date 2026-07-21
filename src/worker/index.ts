@@ -1,13 +1,18 @@
-export interface Env {
-  ASSETS: {
-    fetch(request: Request): Promise<Response>;
-  };
-  ROOMS: {
-    getByName(name: string): {
-      fetch(request: Request): Promise<Response>;
-    };
-  };
-}
+import {
+  DesignerRequestSchema,
+  PlayerRequestSchema,
+  type DesignerStreamEvent,
+} from "../shared/ai";
+import { readAiConfig } from "./ai/config";
+import { OpenAiGateway, type AiGateway } from "./ai/gateway";
+import {
+  AiServiceError,
+  choosePlayerAction,
+  generateDesignerCandidate,
+} from "./ai/service";
+import type { Env } from "./env";
+
+export type { Env } from "./env";
 
 const json = (value: unknown, status = 200): Response =>
   Response.json(value, {
@@ -45,6 +50,24 @@ const worker = {
       return room.fetch(new Request("https://room.internal/health"));
     }
 
+    if (url.pathname === "/api/ai/status") {
+      const config = readAiConfig(env);
+      return json({
+        enabled: config.enabled,
+        designerModel: config.designerModel,
+        playerModel: config.playerModel,
+        fallbackAvailable: true,
+      });
+    }
+
+    if (url.pathname === "/api/ai/designer" && request.method === "POST") {
+      return handleDesignerRequest(request, env);
+    }
+
+    if (url.pathname === "/api/ai/player" && request.method === "POST") {
+      return handlePlayerRequest(request, env);
+    }
+
     if (url.pathname.startsWith("/api/")) {
       return json({ error: "not_found" }, 404);
     }
@@ -56,3 +79,122 @@ const worker = {
 export default worker;
 
 export { RoomObject } from "./room-object";
+export { BudgetObject } from "./budget-object";
+
+export async function handleDesignerRequest(
+  request: Request,
+  env: Env,
+  gateway?: AiGateway,
+): Promise<Response> {
+  const parsed = DesignerRequestSchema.safeParse(await safeJson(request));
+  if (!parsed.success)
+    return json({ error: "invalid_request", issues: parsed.error.issues }, 400);
+  const config = readAiConfig(env);
+  const activeGateway =
+    gateway ?? new OpenAiGateway(env.OPENAI_API_KEY ?? "disabled");
+  const encoder = new TextEncoder();
+  const body = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (event: DesignerStreamEvent) =>
+        controller.enqueue(
+          encoder.encode(
+            `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`,
+          ),
+        );
+      send({ type: "progress", stage: "accepted" });
+      send({ type: "progress", stage: "budget" });
+      send({ type: "progress", stage: "generating" });
+      try {
+        const result = await generateDesignerCandidate(
+          parsed.data,
+          env,
+          config,
+          activeGateway,
+          request.signal,
+        );
+        send({
+          type: "candidate",
+          candidate: result.value,
+          model: result.model,
+          latencyMs: result.latencyMs,
+        });
+      } catch (error) {
+        const serviceError = normalizeServiceError(error);
+        send({
+          type: "error",
+          code: serviceError.code,
+          message: serviceError.message,
+          retryable: serviceError.retryable,
+        });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+  return new Response(body, {
+    headers: {
+      "content-type": "text/event-stream; charset=utf-8",
+      "cache-control": "no-store",
+      connection: "keep-alive",
+      "x-content-type-options": "nosniff",
+    },
+  });
+}
+
+export async function handlePlayerRequest(
+  request: Request,
+  env: Env,
+  gateway?: AiGateway,
+): Promise<Response> {
+  const parsed = PlayerRequestSchema.safeParse(await safeJson(request));
+  if (!parsed.success)
+    return json({ error: "invalid_request", issues: parsed.error.issues }, 400);
+  const config = readAiConfig(env);
+  const activeGateway =
+    gateway ?? new OpenAiGateway(env.OPENAI_API_KEY ?? "disabled");
+  try {
+    const result = await choosePlayerAction(
+      parsed.data,
+      env,
+      config,
+      activeGateway,
+      request.signal,
+    );
+    return json({
+      choice: result.value,
+      model: result.model,
+      latencyMs: result.latencyMs,
+    });
+  } catch (error) {
+    const serviceError = normalizeServiceError(error);
+    return json(
+      {
+        error: serviceError.code,
+        message: serviceError.message,
+        retryable: serviceError.retryable,
+      },
+      serviceError.status,
+    );
+  }
+}
+
+async function safeJson(request: Request): Promise<unknown> {
+  const length = Number(request.headers.get("content-length") ?? "0");
+  if (length > 96_000) return null;
+  try {
+    return await request.json();
+  } catch {
+    return null;
+  }
+}
+
+function normalizeServiceError(error: unknown): AiServiceError {
+  return error instanceof AiServiceError
+    ? error
+    : new AiServiceError(
+        "AI_INTERNAL_ERROR",
+        "The AI request failed; use the labelled fallback.",
+        500,
+        false,
+      );
+}

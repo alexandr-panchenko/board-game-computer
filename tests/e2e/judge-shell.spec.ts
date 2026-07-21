@@ -160,3 +160,87 @@ test("dragging an explorer proposes exactly one legal move cell", async ({
     "Move committed as one reversible cell",
   );
 });
+
+test("AI fallback keeps the Designer rule and AI seat playable", async ({
+  page,
+}) => {
+  await page.goto("/judge");
+  const beforeRule = await page.getByTestId("game-state-hash").textContent();
+  await page.getByRole("button", { name: "Use labelled example rule" }).click();
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "Labelled example rule validated" }),
+  ).toBeVisible();
+  await expect(page.getByText(/Designer · Labelled example/)).toBeVisible();
+  await expect(
+    page.getByText(/Scenario\("blue-gate-rotates-linked-room"/),
+  ).toBeVisible();
+  expect(await page.getByTestId("game-state-hash").textContent()).not.toBe(
+    beforeRule,
+  );
+
+  await page.getByRole("button", { name: "End turn", exact: true }).click();
+  await page.getByRole("button", { name: "Run Ivo fallback turn" }).click();
+  await expect(page.getByRole("status").first()).toContainText(
+    "Labelled deterministic fallback completed",
+  );
+  await expect(page.getByText("Mara turn")).toBeVisible();
+});
+
+test("mocked AI Designer and player use validated local paths", async ({
+  page,
+}) => {
+  const source = `Scenario("blue-gate-rotates-linked-room", {
+  given: "explorer-enters-blue-gate",
+  when: "after",
+  then: "rotate-linked-room-clockwise-if-empty"
+});`;
+  await page.route("**/api/ai/designer", async (route) => {
+    const candidate = {
+      type: "candidate",
+      candidate: {
+        source,
+        summary: "Mocked live blue-gate rule.",
+        expected_effects: ["Mirror Gallery rotates."],
+      },
+      model: "gpt-5.6-sol",
+      latencyMs: 12,
+    };
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body:
+        `event: progress\ndata: ${JSON.stringify({ type: "progress", stage: "generating" })}\n\n` +
+        `event: candidate\ndata: ${JSON.stringify(candidate)}\n\n`,
+    });
+  });
+  await page.route("**/api/ai/player", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        choice: {
+          option_id: "ivo-option-1",
+          reason: "Use the first legal path.",
+        },
+        model: "gpt-5.6-luna",
+        latencyMs: 8,
+      }),
+    });
+  });
+  await page.goto("/judge");
+  await page.getByRole("button", { name: "Ask GPT-5.6 Designer" }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Mocked live blue-gate rule" }),
+  ).toBeVisible();
+  await expect(page.getByText(/Designer · Mocked live/)).toBeVisible();
+
+  await page.getByRole("button", { name: "End turn", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Ask GPT-5.6 Luna for Ivo move" })
+    .click();
+  await expect(page.getByRole("status").first()).toContainText(
+    "Live gpt-5.6-luna: Use the first legal path",
+  );
+});

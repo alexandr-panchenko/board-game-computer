@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 
-import type { Env } from "./index";
+import type { Env } from "./env";
 
 export class RoomObject extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {

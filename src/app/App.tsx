@@ -3,16 +3,33 @@ import { useCallback, useState } from "react";
 import { TableCanvas } from "../render";
 import { RoomRuntime, type LegalActionOption } from "../runtime";
 import {
+  BLUE_GATE_HERO_SOURCE,
+  commitDesignerCandidate,
   createCuratedCheckpoint,
   CURATED_REPLAY,
   ShiftingVaultsGame,
+  speculateDesignerCandidate,
 } from "../sample";
+import type { DesignerCandidate } from "../shared/ai";
 import { APP_NAME, LANGUAGE_VERSION } from "../shared/versions";
+import { requestDesignerCandidate, requestPlayerChoice } from "./ai-client";
+import {
+  resolveChosenOption,
+  runDesignerRepairLoop,
+} from "./designer-orchestrator";
 
 export function App() {
   const isJudge = window.location.pathname === "/judge";
   const [game, setGame] = useState(() => createCuratedCheckpoint());
   const [, setGameRevision] = useState(0);
+  const [designerPrompt, setDesignerPrompt] = useState(
+    "Whenever an explorer enters a blue gate, rotate the connected room clockwise.",
+  );
+  const [designerBusy, setDesignerBusy] = useState(false);
+  const [designerStatus, setDesignerStatus] = useState(
+    "Live GPT-5.6 is optional; the labelled example uses the identical validation path.",
+  );
+  const [designerCells, setDesignerCells] = useState<DesignerCandidate[]>([]);
   const [gameMessage, setGameMessage] = useState(
     "Fresh deterministic vault ready. Choose any highlighted legal action.",
   );
@@ -80,12 +97,147 @@ export function App() {
 
   const reset = () => {
     setGame(createCuratedCheckpoint());
+    setDesignerCells([]);
     setGameMessage("Reset to the immutable guided checkpoint.");
   };
 
   const freshCopy = () => {
     setGame(new ShiftingVaultsGame());
+    setDesignerCells([]);
     setGameMessage("Created a deterministic fresh game from setup.");
+  };
+
+  const useExampleRule = () => {
+    const candidate = {
+      source: BLUE_GATE_HERO_SOURCE,
+      summary: "Labelled example: blue gates rotate an unoccupied linked room.",
+      expected_effects: [
+        "Entering Azure Gate rotates Mirror Gallery clockwise.",
+      ],
+    };
+    const speculative = speculateDesignerCandidate(game, candidate.source);
+    const result = speculative.ok
+      ? commitDesignerCandidate(game, candidate.source)
+      : speculative;
+    if (!result.ok) {
+      setDesignerStatus(
+        `${result.diagnostic.code}: ${result.diagnostic.message}`,
+      );
+      return;
+    }
+    setDesignerCells((cells) => [...cells, candidate]);
+    setDesignerStatus(
+      "Labelled example rule validated and committed as a normal Designer cell.",
+    );
+    setGameMessage("The example blue-gate Scenario is active and reversible.");
+    setGameRevision((value) => value + 1);
+  };
+
+  const askDesigner = async () => {
+    setDesignerBusy(true);
+    const initialHash = game.snapshot().stateHash;
+    try {
+      const result = await runDesignerRepairLoop({
+        baseHash: initialHash,
+        currentHash: () => game.snapshot().stateHash,
+        generate: async (attempt, diagnostics) => {
+          setDesignerStatus(
+            `GPT-5.6 attempt ${String(attempt)} of 3 · assembling bounded context…`,
+          );
+          return requestDesignerCandidate(
+            {
+              roomId: "judge-shifting-vaults",
+              request: designerPrompt,
+              baseSeq: CURATED_REPLAY.length + designerCells.length,
+              baseHash: initialHash,
+              sourceCells: [
+                ...CURATED_REPLAY.map((cell) => ({
+                  id: cell.id,
+                  kind: "action" as const,
+                  source: cell.source,
+                })),
+                ...designerCells.map((cell, index) => ({
+                  id: `designer-${String(index + 1)}`,
+                  kind: "rule" as const,
+                  source: cell.source,
+                })),
+              ],
+              inspection: inspectionFor(game),
+              attempt,
+              diagnostics,
+            },
+            (event) => {
+              if (event.type === "progress")
+                setDesignerStatus(`GPT-5.6 · ${event.stage}…`);
+            },
+          );
+        },
+        validate: (source) => speculateDesignerCandidate(game, source),
+        commit: (source) => commitDesignerCandidate(game, source),
+        onRejected: (diagnostic) => {
+          setDesignerStatus(
+            `Candidate rejected locally (${diagnostic.code}); requesting repair.`,
+          );
+        },
+      });
+      if (result.ok) {
+        setDesignerCells((cells) => [...cells, result.candidate]);
+        setDesignerStatus(
+          `Live ${result.candidate.summary} Validated${result.revalidated ? " again against the changed room" : " locally"} and committed.`,
+        );
+        setGameMessage(
+          "GPT-5.6's blue-gate Scenario is active and reversible.",
+        );
+        setGameRevision((value) => value + 1);
+        return;
+      }
+      setDesignerStatus(
+        result.error === undefined
+          ? "Three candidates failed local validation. Nothing was committed; use the labelled example."
+          : `${result.error}. The labelled fallback remains playable.`,
+      );
+    } finally {
+      setDesignerBusy(false);
+    }
+  };
+
+  const askAiPlayer = async () => {
+    const offered = game.legalActions("ai");
+    const optionMap = new Map(
+      offered.map((option, index) => [
+        `ivo-option-${String(index + 1)}`,
+        option,
+      ]),
+    );
+    setGameMessage("GPT-5.6 Luna is choosing from opaque legal option IDs…");
+    try {
+      const response = await requestPlayerChoice({
+        roomId: "judge-shifting-vaults",
+        baseHash: game.snapshot().stateHash,
+        inspection: inspectionFor(game),
+        options: [...optionMap].map(([optionId, option]) => ({
+          optionId,
+          label: option.label,
+          consequence: actionConsequence(option),
+        })),
+      });
+      const stillLegal = resolveChosenOption({
+        offered: optionMap,
+        chosenOptionId: response.choice.option_id,
+        current: game.legalActions("ai"),
+      });
+      if (stillLegal === undefined) throw new Error("AI_ACTION_UNAVAILABLE");
+      performOption(stillLegal);
+      setGameMessage(
+        `Live ${response.model}: ${response.choice.reason} · committed through performAction.`,
+      );
+    } catch {
+      const fallback = game.chooseFallbackAction("ai");
+      performOption(fallback);
+      setGameMessage(
+        `Labelled deterministic fallback chose ${fallback.label} after the live AI path was unavailable.`,
+      );
+    }
   };
 
   return (
@@ -117,6 +269,12 @@ export function App() {
                 key={cell.id}
               >
                 <strong>{cell.label}</strong>
+                <code>{cell.source}</code>
+              </li>
+            ))}
+            {designerCells.map((cell, index) => (
+              <li className="designer-cell" key={`designer-${String(index)}`}>
+                <strong>Designer · {cell.summary}</strong>
                 <code>{cell.source}</code>
               </li>
             ))}
@@ -179,19 +337,28 @@ export function App() {
                 </button>
               </div>
               {snapshot.activeSeatId === "ai" ? (
-                <button
-                  className="ai-turn-button"
-                  type="button"
-                  onClick={() => {
-                    const results = game.playFallbackTurn("ai");
-                    setGameMessage(
-                      `Deterministic fallback completed ${String(results.length)} legal AI cells.`,
-                    );
-                    setGameRevision((value) => value + 1);
-                  }}
-                >
-                  Run Ivo fallback turn
-                </button>
+                <div className="ai-player-actions">
+                  <button
+                    className="ai-turn-button"
+                    type="button"
+                    onClick={() => void askAiPlayer()}
+                  >
+                    Ask GPT-5.6 Luna for Ivo move
+                  </button>
+                  <button
+                    className="ai-turn-button"
+                    type="button"
+                    onClick={() => {
+                      const results = game.playFallbackTurn("ai");
+                      setGameMessage(
+                        `Labelled deterministic fallback completed ${String(results.length)} legal AI cells.`,
+                      );
+                      setGameRevision((value) => value + 1);
+                    }}
+                  >
+                    Run Ivo fallback turn
+                  </button>
+                </div>
               ) : null}
             </>
           ) : (
@@ -211,6 +378,32 @@ export function App() {
             <dt>Game state hash</dt>
             <dd data-testid="game-state-hash">{snapshot.stateHash}</dd>
           </dl>
+
+          <section className="designer-agent" aria-label="Designer agent">
+            <h3>GPT-5.6 Designer</h3>
+            <label className="source-label" htmlFor="designer-prompt">
+              Prepared rule request
+            </label>
+            <textarea
+              id="designer-prompt"
+              value={designerPrompt}
+              onChange={(event) => setDesignerPrompt(event.target.value)}
+              maxLength={1_000}
+            />
+            <button
+              type="button"
+              disabled={designerBusy}
+              onClick={() => void askDesigner()}
+            >
+              {designerBusy ? "Validating GPT-5.6…" : "Ask GPT-5.6 Designer"}
+            </button>
+            <button type="button" onClick={useExampleRule}>
+              Use labelled example rule
+            </button>
+            <p className="designer-status" role="status">
+              {designerStatus}
+            </p>
+          </section>
 
           <details className="runtime-lab">
             <summary>Reversible language lab</summary>
@@ -297,4 +490,35 @@ function actionLabel(option: LegalActionOption): string {
   return [option.label, card, target === undefined ? undefined : `→ ${target}`]
     .filter((part): part is string => part !== undefined)
     .join(" ");
+}
+
+function actionConsequence(option: LegalActionOption): string {
+  const target =
+    option.parameters.destinationId ??
+    option.parameters.roomId ??
+    option.parameters.targetId ??
+    "current turn";
+  return `${option.label} affects ${target}; the browser retains and revalidates literal arguments.`;
+}
+
+function inspectionFor(game: ShiftingVaultsGame): string {
+  const snapshot = game.snapshot();
+  return JSON.stringify({
+    round: snapshot.round,
+    activeSeatId: snapshot.activeSeatId,
+    threat: snapshot.threat.value,
+    result: snapshot.result,
+    explorers: Object.values(snapshot.explorers).map((explorer) => ({
+      id: explorer.id,
+      zoneId: explorer.zoneId,
+      relicCount: explorer.relicCount,
+      actionPoints: explorer.actionPoints,
+    })),
+    zones: Object.values(snapshot.zones).map((zone) => ({
+      id: zone.id,
+      tags: zone.tags,
+      linkedRoomId: zone.linkedRoomId,
+      rotation: zone.rotation,
+    })),
+  });
 }

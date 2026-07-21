@@ -7,9 +7,10 @@
 - User API key: not required
 - Best path: desktop or mobile modern browser
 
-Current implementation status: M4 is deployed and production-verified. The
-deterministic path below works; live GPT-5.6 rule
-authoring and shared-room persistence are not yet available.
+Current production status: M4 is deployed and verified. M5 is locally validated
+and awaiting its implementation deployment; live GPT-5.6 should not be treated
+as production evidence until that deployment is verified. Shared-room
+persistence remains future milestone work.
 
 ## Current deterministic path
 
@@ -39,6 +40,18 @@ M5 and are not claimed by this milestone.
 Press **Use labelled example rule**. The application inserts a clearly marked
 prewritten cell into the same validator and interpreter. This fallback is not
 presented as a live GPT-5.6 response.
+
+## Validated M5 path after deployment
+
+1. Press **Ask GPT-5.6 Designer** with the prepared blue-gate request.
+2. Watch accepted, budget, and generating progress; confirm the returned source
+   appears as a normal Designer cell only after local speculative execution and
+   exact rollback.
+3. End Mara's turn and press **Ask GPT-5.6 Luna for Ivo move**. Confirm the
+   reason is labelled live and the chosen opaque option is revalidated and
+   executed through the same action path as a human.
+4. If either request is unavailable, confirm the UI explicitly says
+   **Labelled deterministic fallback** and play continues.
 
 ## Release
 

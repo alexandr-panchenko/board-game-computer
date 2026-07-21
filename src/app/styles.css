@@ -107,6 +107,11 @@ button:disabled {
 .active-cell {
   color: #75d7b4;
 }
+.designer-cell {
+  border-left: 3px solid #d6ad65;
+  padding-left: 10px;
+  color: #ffe4a5;
+}
 .muted {
   color: #91a2af;
   font-size: 13px;
@@ -149,6 +154,24 @@ button:disabled {
   margin-top: 18px;
   border-top: 1px solid #2b414c;
   padding-top: 14px;
+}
+.designer-agent {
+  margin-top: 18px;
+  border-top: 1px solid #2b414c;
+  padding-top: 14px;
+}
+.designer-agent button {
+  width: 100%;
+}
+.designer-status {
+  min-height: 52px;
+  color: #c5d7d0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.ai-player-actions {
+  display: grid;
+  gap: 6px;
 }
 .runtime-lab summary {
   color: #75d7b4;
