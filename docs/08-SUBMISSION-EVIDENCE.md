@@ -290,9 +290,28 @@ not evidence.
 - Static generated art was cut under the documented M8 fallback because
   primitive visuals are original, deterministic, already coherent, and carry
   no loading or provenance risk. No generated asset claim is made.
-- `docs/14-OPERATIONS-RUNBOOK.md` records the exact deployment, smoke,
-  rollback, and restore commands. Production version IDs and live results are
-  pending the M8 deployment.
+- Implementation commit `51dc131f0c86b972690cdc291d0a7b4489fa5a2e`
+  passed GitHub Actions validation in run
+  `https://github.com/alexandr-panchenko/board-game-computer/actions/runs/29812767599`.
+  Cloudflare deployment succeeded as version
+  `9ab618e8-5623-4687-8145-f9f740b97847`; the job's first smoke correctly
+  failed because it still targeted the retired workers.dev host. The canonical
+  apex immediately passed exact-commit and security-header smoke.
+- The documented rollback exercise deployed M7 version
+  `e9b7bc22-dec6-4787-9b73-46ce0d70ecf6` at 100%. After edge propagation,
+  `https://boardgamecomputer.com/api/version` reported exact M7 commit
+  `d9ebcda5d5f2c6c4b3745a441ed14d7396b204f2` and `/judge` returned 200. M8
+  version `9ab618e8-5623-4687-8145-f9f740b97847` was then restored to 100%; the
+  apex reported exact commit `51dc131f0c86b972690cdc291d0a7b4489fa5a2e`
+  with CSP, HSTS, permissions, referrer, content-type, and frame headers.
+- The full production Playwright matrix passed 36/36 against the apex across
+  clean desktop and Pixel 7 contexts, including cancellation, fallback with no
+  console-breaking errors, persistent convergence/rebase/reconnect/fork, and
+  both real endings. Visually reviewed gitignored artifacts are
+  `evidence/local/m8-production-desktop.png`,
+  `evidence/local/m8-production-mobile.png`, and
+  `evidence/local/m8-production-budget-fallback.png`; none displays a room
+  capability or secret.
 
 ## Requirements and judging evidence
 

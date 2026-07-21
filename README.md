@@ -3,17 +3,16 @@
 > **Working title.** Describe, play, and rewrite a board game in one shared
 > room—people and GPT-5.6 operate the same safe, reversible tabletop language.
 
-**Build Week status:** Milestone 7 is deployed and production-verified.
-Milestone 8 hardening is locally validated, including graceful AI cancellation,
-security/protocol limits, clean-console fallback, and the full mobile matrix;
-production promotion and reversible rollback verification are the active gate.
+**Build Week status:** Milestone 8 hardening is deployed at the canonical
+domain, its full local/CI validation matrix is green, and rollback to the known
+good M7 version plus restoration of M8 have been verified. Final clean-browser
+production evidence is the active gate.
 
 ## Live demo
 
-- Main: <https://board-game-computer.sanocks.workers.dev/>
-- Judge route: <https://board-game-computer.sanocks.workers.dev/judge>
-- Current status: **M7 complete and production-verified; M8 hardening in
-  progress**
+- Main: <https://boardgamecomputer.com/>
+- Judge route: <https://boardgamecomputer.com/judge>
+- Current status: **M8 deployed; final production browser evidence in progress**
 
 The deployed build proves the complete end-to-end sequence on desktop and
 mobile, including a strict GPT-authored rule boundary, AI-seat selection,

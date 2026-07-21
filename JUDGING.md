@@ -2,14 +2,13 @@
 
 ## Demo
 
-- URL: <https://board-game-computer.sanocks.workers.dev/judge>
+- URL: <https://boardgamecomputer.com/judge>
 - Login: none
 - User API key: not required
 - Best path: desktop or mobile modern browser
 
-Current production status: the complete M6 path below is deployed and verified
-on desktop and minimum mobile viewports. The optional M7 persistent-room proof
-is also deployed and verified. Production evidence is recorded in
+Current production status: the M8-hardened path below is deployed at the exact
+recorded commit. Desktop/mobile and rollback verification are recorded in
 `docs/08-SUBMISSION-EVIDENCE.md`.
 
 ## Literal 60–90 second path

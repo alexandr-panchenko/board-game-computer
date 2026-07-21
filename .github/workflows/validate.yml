@@ -48,3 +48,4 @@ jobs:
         run: bun run smoke:production
         env:
           EXPECTED_COMMIT: ${{ github.sha }}
+          PRODUCTION_URL: https://boardgamecomputer.com

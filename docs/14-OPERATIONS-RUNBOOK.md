@@ -8,7 +8,8 @@ incident record.
 ## Production endpoints
 
 - Canonical domain: `https://boardgamecomputer.com`
-- Worker fallback: `https://board-game-computer.sanocks.workers.dev`
+- Retired pre-domain host: `https://board-game-computer.sanocks.workers.dev`
+  (expected to return 404 after custom-domain assignment)
 - Health: `/api/health`
 - Exact version: `/api/version`
 - Judge path: `/judge`
@@ -55,10 +56,11 @@ bunx wrangler versions deploy <release-version-id>@100% --message "Restore verif
 EXPECTED_COMMIT=<release-sha> bun run smoke:production
 ```
 
-The first M8 exercise uses M7 version
+The completed M8 exercise used M7 version
 `e9b7bc22-dec6-4787-9b73-46ce0d70ecf6` (commit `d9ebcda`) as the known-good
-rollback target. Record the resulting M8 version ID and both smoke results in
-`docs/08-SUBMISSION-EVIDENCE.md`.
+rollback target and restored M8 version
+`9ab618e8-5623-4687-8145-f9f740b97847` (commit `51dc131`) at 100% traffic.
+The exact smoke results are recorded in `docs/08-SUBMISSION-EVIDENCE.md`.
 
 ## Incident priorities
 
@@ -67,4 +69,3 @@ rollback target. Record the resulting M8 version ID and both smoke results in
 3. Rotate affected Cloudflare/GitHub credentials for control-plane exposure.
 4. Preserve only redacted diagnostics, repair, rerun full validation, and
    update evidence honestly.
-

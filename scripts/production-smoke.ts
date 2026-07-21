@@ -1,8 +1,7 @@
 export {};
 
 const baseUrl = (
-  process.env.PRODUCTION_URL ??
-  "https://board-game-computer.sanocks.workers.dev"
+  process.env.PRODUCTION_URL ?? "https://boardgamecomputer.com"
 ).replace(/\/$/, "");
 const expectedCommit = process.env.EXPECTED_COMMIT;
 
