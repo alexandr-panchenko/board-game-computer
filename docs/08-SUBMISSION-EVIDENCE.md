@@ -177,6 +177,34 @@ not evidence.
   Production Luna selected offered option `opaque-search` in 1,357 ms; no
   literal action arguments or credentials were sent to the model.
 
+## Milestone 6 — Complete hero and judge flow
+
+- Date: 2026-07-21.
+- Immutable replay fixture: `createGuidedReplayStep` derives steps 0–3 from
+  bundled sample data; step 3 exactly matches the curated Round 3 checkpoint.
+- Product path: replay advances source, ordered trace, focus, and tabletop
+  together; takeover commits a registered human move; Luna or its labelled
+  fallback selects a registered AI action; Designer or its labelled example
+  commits the blue-gate Scenario; leaving and re-entering Azure Gate fires the
+  real Scenario trace and rotates the connected room.
+- Recovery controls: **Return to demo checkpoint**, **Replay from start**, and
+  **Fresh copy** reconstruct their states from immutable data. `/` and `/judge`
+  expose the same guided template.
+- First paint test intercepts all `/api/ai/` requests and proves zero requests
+  occur before the useful table and replay UI appear.
+- Full `bun run validate` passed 46 unit tests, 8 Worker tests, and 24
+  Playwright checks across desktop/mobile, followed by production build,
+  103-file-plus-build-output secret scan, and 27-direct-dependency license scan.
+- The mocked desktop/mobile hero path completes in under 90 seconds. Separate
+  desktop/mobile tests complete the same path with AI disabled and the labelled
+  example rule, and deterministic tests retain both real escape and collapse
+  endings.
+- Local visual review passed at
+  `evidence/local/m6-guided-desktop.png` and
+  `evidence/local/m6-guided-mobile.png` (gitignored local artifacts).
+- Production implementation commit, CI run, exact-version verification, and
+  live integrated Sol/Luna outcome: pending deployment.
+
 ## Requirements and judging evidence
 
 | Status | Requirement / criterion | Claim to verify | Exact evidence required | URL/file/video timestamp | Verification method |

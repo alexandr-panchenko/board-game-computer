@@ -1,6 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 test("production shell opens the responsive judge route", async ({ page }) => {
+  const aiRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/ai/")) aiRequests.push(request.url());
+  });
   await page.goto("/judge");
 
   await expect(
@@ -23,6 +27,21 @@ test("production shell opens the responsive judge route", async ({ page }) => {
     ok: true,
     phase: "vertical-slice",
   });
+  expect(aiRequests).toEqual([]);
+});
+
+test("main route opens the same immutable guided template", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: "Shifting Vaults" }),
+  ).toBeVisible();
+  await expect(page.getByText("Guided replay · 0 / 3")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Next replay step" }),
+  ).toBeVisible();
+  await expect(page.getByText("Demo route ready")).toBeVisible();
 });
 
 test("runtime inspector commits, undoes, and redoes a cell", async ({
@@ -76,7 +95,7 @@ test("semantic game action updates the Pixi-projected state and resets", async (
   await expect(page.getByText(/Mara: azure-gate/)).toBeVisible();
   await expect(page.getByTestId("game-state-hash")).toHaveText(movedHash!);
 
-  await page.getByRole("button", { name: "Reset" }).click();
+  await page.getByRole("button", { name: "Take control now" }).click();
   await expect(page.getByText(/Mara: clockwork-archive/)).toBeVisible();
   await expect(page.getByTestId("game-state-hash")).toHaveText(initialHash!);
   await page.getByRole("button", { name: "Fresh copy" }).click();
@@ -244,3 +263,130 @@ test("mocked AI Designer and player use validated local paths", async ({
     "Live gpt-5.6-luna: Use the first legal path",
   );
 });
+
+test("judge path links replay, takeover, AI, rule, and trigger", async ({
+  page,
+}) => {
+  await installMockedAi(page);
+  const started = Date.now();
+  await page.goto("/judge");
+  await expect(page.getByText("Guided replay · 0 / 3")).toBeVisible();
+
+  for (let step = 1; step <= 3; step += 1) {
+    await page.getByRole("button", { name: "Next replay step" }).click();
+    await expect(
+      page.getByText(`Guided replay · ${String(step)} / 3`),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("list", { name: "Replay execution trace" }),
+    ).toBeVisible();
+  }
+  await page.getByRole("button", { name: "Take control now" }).click();
+  await expect(page.getByText("Takeover · Human")).toBeVisible();
+  const humanMove = page.getByRole("button", {
+    name: "Move → azure-gate",
+    exact: true,
+  });
+  await expect(humanMove).toHaveClass(/recommended-action/);
+  await humanMove.click();
+
+  await expect(page.getByText("Takeover · AI player")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Ask GPT-5.6 Luna for Ivo move" })
+    .click();
+  await expect(page.getByText("Live design")).toBeVisible();
+  await page.getByRole("button", { name: "Ask GPT-5.6 Designer" }).click();
+  await expect(page.getByText("Rule committed · Trigger setup")).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "Move → clockwork-archive", exact: true })
+    .click();
+  await expect(page.getByText("Rule committed · Trigger now")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Move → azure-gate", exact: true })
+    .click();
+  await expect(page.getByText("Hero path complete")).toBeVisible();
+  await expect(page.getByRole("status").first()).toContainText(
+    "Blue-gate Scenario fired",
+  );
+  expect(Date.now() - started).toBeLessThan(90_000);
+});
+
+test("reset demo and replay from start reproduce the judge path", async ({
+  page,
+}) => {
+  await page.goto("/judge");
+  await page.getByRole("button", { name: "Take control now" }).click();
+  await page
+    .getByRole("button", { name: "Move → azure-gate", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Return to demo checkpoint" }).click();
+  await expect(page.getByText("Takeover · Human")).toBeVisible();
+  await expect(page.getByText(/Mara: clockwork-archive/)).toBeVisible();
+  await expect(page.getByText("Round 3")).toBeVisible();
+
+  await page.getByRole("button", { name: "Replay from start" }).click();
+  await expect(page.getByText("Guided replay · 0 / 3")).toBeVisible();
+  await expect(page.getByText("Round 1")).toBeVisible();
+  await page.getByRole("button", { name: "Fresh copy" }).click();
+  await expect(page.getByText("Fresh deterministic copy")).toBeVisible();
+  await expect(page.getByText(/Mara: gatehouse/)).toBeVisible();
+});
+
+test("judge path completes with AI fallback and example rule", async ({
+  page,
+}) => {
+  await page.goto("/judge");
+  await page.getByRole("button", { name: "Take control now" }).click();
+  await page
+    .getByRole("button", { name: "Move → azure-gate", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Run Ivo fallback turn" }).click();
+  await expect(page.getByText("Live design")).toBeVisible();
+  await page.getByRole("button", { name: "Use labelled example rule" }).click();
+  await page
+    .getByRole("button", { name: "Move → clockwork-archive", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Move → azure-gate", exact: true })
+    .click();
+  await expect(page.getByText("Hero path complete")).toBeVisible();
+  await expect(page.getByRole("status").first()).toContainText(
+    "Blue-gate Scenario fired",
+  );
+});
+
+async function installMockedAi(page: import("@playwright/test").Page) {
+  const source = `Scenario("blue-gate-rotates-linked-room", {
+  given: "explorer-enters-blue-gate",
+  when: "after",
+  then: "rotate-linked-room-clockwise-if-empty"
+});`;
+  await page.route("**/api/ai/designer", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body: `event: candidate\ndata: ${JSON.stringify({
+        type: "candidate",
+        candidate: {
+          source,
+          summary: "Mocked hero rule.",
+          expected_effects: ["Mirror Gallery rotates."],
+        },
+        model: "gpt-5.6-sol",
+        latencyMs: 10,
+      })}\n\n`,
+    });
+  });
+  await page.route("**/api/ai/player", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        choice: { option_id: "ivo-option-1", reason: "Choose a legal option." },
+        model: "gpt-5.6-luna",
+        latencyMs: 8,
+      }),
+    });
+  });
+}

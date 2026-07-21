@@ -7,50 +7,44 @@
 - User API key: not required
 - Best path: desktop or mobile modern browser
 
-Current production status: M5 is deployed and verified. The deterministic and
-validated GPT-5.6 paths below work in production. Guided replay/takeover polish
-and shared-room persistence remain later milestone work.
+Current release-candidate status: the complete M6 path below passes locally on
+desktop and minimum mobile viewports. Production verification is recorded in
+`docs/08-SUBMISSION-EVIDENCE.md`; persistent shared rooms remain M7 work.
 
-## Current deterministic path
+## Literal 60–90 second path
 
 1. Open `/judge`; confirm **Round 3**, **Mara turn**, **Threat 4 / 10**, seven
-   rooms, and the three canonical replay cells.
-2. Press **Move → azure-gate**. Confirm Mara moves, AP drops to 1, the trace is
-   shown, and the state hash changes.
-3. Press **Undo game cell**, then **Redo game cell**. Confirm Mara and the hash
-   return exactly each time.
-4. Press **Reset**. Confirm the Round 3 checkpoint returns.
-5. Press **End turn**, then **Run Ivo fallback turn**. Confirm the labelled
-   deterministic fallback performs only registered legal actions.
-6. Press **Fresh copy**. Confirm Round 1, Threat 2, and both explorers in the
-   Gatehouse.
+   rooms, and **Guided replay · 0 / 3**. No AI request runs on first load.
+2. Press **Next replay step** three times. At each step confirm the highlighted
+   canonical source, ordered trace, and visible table state advance together.
+3. Press **Take control now**, then the highlighted **Move → azure-gate**.
+   Confirm Mara's registered action commits and play passes to Ivo.
+4. Press **Ask GPT-5.6 Luna for Ivo move**. Confirm a live or explicitly
+   labelled fallback legal action commits and the coach advances to Live design.
+5. Leave the prepared prompt unchanged and press **Ask GPT-5.6 Designer**.
+   Confirm progress is visible and the validated blue-gate Scenario appears as
+   a normal source cell. If unavailable, press **Use labelled example rule**.
+6. Press the highlighted **Move → clockwork-archive**, then **Move → azure-gate**.
+   Confirm the trace reports entity entry, Scenario match, and linked-room
+   rotation. The coach now reads **Hero path complete**.
+7. Continue playing toward a real ending, or verify **Return to demo
+   checkpoint**, **Replay from start**, and **Fresh copy** reproduce their
+   labelled states.
 
-The automated browser path also plays from the checkpoint to Mara escaping
-with two relics and separately proves vault collapse.
+The automated suite additionally reaches Mara's real escape ending and the
+vault-collapse ending, and completes this hero path with both mocked AI and no
+OpenAI availability.
 
 ## Expected visible outcome
 
-A deterministic program drives direct manipulation, fallback-AI play, exact
-undo/redo, reset, and both real endings. Live Designer rule changes arrive in
-M5 and are not claimed by this milestone.
+A deterministic program drives replay, direct manipulation, legal AI play,
+validated live rule editing, exact undo/redo, reset, and both real endings.
 
 ## If the AI API is unavailable
 
 Press **Use labelled example rule**. The application inserts a clearly marked
 prewritten cell into the same validator and interpreter. This fallback is not
 presented as a live GPT-5.6 response.
-
-## Validated M5 path
-
-1. Press **Ask GPT-5.6 Designer** with the prepared blue-gate request.
-2. Watch accepted, budget, and generating progress; confirm the returned source
-   appears as a normal Designer cell only after local speculative execution and
-   exact rollback.
-3. End Mara's turn and press **Ask GPT-5.6 Luna for Ivo move**. Confirm the
-   reason is labelled live and the chosen opaque option is revalidated and
-   executed through the same action path as a human.
-4. If either request is unavailable, confirm the UI explicitly says
-   **Labelled deterministic fallback** and play continues.
 
 ## Release
 

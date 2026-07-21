@@ -19,6 +19,21 @@ export function createCuratedCheckpoint(): ShiftingVaultsGame {
   return game;
 }
 
+export function createGuidedReplayStep(
+  step: 0 | 1 | 2 | 3,
+): ShiftingVaultsGame {
+  if (step === 3) return createCuratedCheckpoint();
+  const game = new ShiftingVaultsGame();
+  if (step >= 1)
+    perform(game, "play-tactic-card", {
+      cardId: "gear-1",
+      targetId: "clockwork-archive",
+    });
+  if (step >= 2)
+    perform(game, "move-explorer", { destinationId: "clockwork-archive" });
+  return game;
+}
+
 function perform(
   game: ShiftingVaultsGame,
   actionId: string,

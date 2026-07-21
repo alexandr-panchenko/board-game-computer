@@ -10,18 +10,20 @@ Last design review: **2026-07-21**
 | M3 — Reversible interpreter core | complete | Full M3 command matrix and `bun run validate` passed 2026-07-21 | Optional callback array methods remain intentionally cut per M3 fallback | Preserve runtime invariants while building the table framework | `f902c0a` |
 | M4 — Table framework and complete deterministic sample | complete | Local validation, production desktop/mobile gameplay, and GitHub Actions validate/deploy passed 2026-07-21 | Pixi bundle emits a non-blocking >500 kB chunk warning | Preserve the deterministic game while adding server-side AI | `e5732aa` |
 | M5 — GPT-5.6 integration | complete | Local/live validation, production desktop/mobile paths, and GitHub Actions validate/deploy passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve validated AI and fallback behavior in the hero flow | `aab81ed` |
-| M6 — Complete hero/judge flow | in progress | M5 production gate passed | Must combine existing pieces without expanding scope | Guided replay → takeover → live rule → real ending | — |
+| M6 — Complete hero/judge flow | in progress | Full local validation passed 2026-07-21 | Production deployment/verification pending | Commit, deploy, and verify exact production build | — |
 | M7 — Persistent shared rooms and rebase | not started | — | May be cut only at the documented cut line | Durable Object storage, two clients, reconnect, fork | — |
 | M8 — Reliability, mobile, security, and production verification | not started | — | Production behavior unknown | Complete fallbacks, budgets, E2E, clean-browser QA | — |
 | M9 — Evidence and release freeze | not started | — | No real evidence yet | Fill evidence, record video, tag release, submit | — |
 
 ## Current gate
 
-**M6 IN PROGRESS.** M5 commit `aab81ed` passed CI validation/deployment,
-production reports the exact commit, six deployed desktop/mobile checks passed,
-and bounded production Sol/Luna requests returned valid strict tool results.
-The active gate is the coherent guided replay → takeover → AI turn → live rule
-→ triggered effect → real ending judge path.
+**M6 IMPLEMENTATION COMPLETE; PRODUCTION GATE IN PROGRESS.** Guided replay,
+takeover, a registered human action, Luna/fallback turn, validated Designer
+rule, real Scenario trigger, reset/replay/fresh controls, and continued play to
+real endings now form one literal path. Full local validation passed 46 unit,
+8 Worker, and 24 desktop/mobile browser tests plus build, secret, and license
+checks. The milestone remains in progress until its exact commit is deployed
+and manually verified with live AI.
 
 ## Cut line
 

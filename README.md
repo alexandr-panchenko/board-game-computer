@@ -3,22 +3,22 @@
 > **Working title.** Describe, play, and rewrite a board game in one shared
 > room—people and GPT-5.6 operate the same safe, reversible tabletop language.
 
-**Build Week status:** Milestone 5 is deployed and production-verified. The
-repository now contains the reversible interpreter, complete deterministic
-`Shifting Vaults`, a server-only GPT-5.6 Designer, GPT-5.6 Luna legal-action
-selection, strict local validation/repair, and deterministic fallbacks. The
-cohesive hero flow and persistent collaboration remain milestone work.
+**Build Week status:** Milestone 6 is locally complete and awaiting its
+production gate. The repository now combines the reversible interpreter,
+complete deterministic `Shifting Vaults`, server-only GPT-5.6 Designer and
+Luna paths, guided replay, takeover, triggered live rule, real endings, and
+deterministic fallbacks. Persistent collaboration remains milestone work.
 
 ## Live demo
 
 - Main: <https://board-game-computer.sanocks.workers.dev/>
 - Judge route: <https://board-game-computer.sanocks.workers.dev/judge>
-- Current status: **M5 GPT-5.6 integration deployed and verified; M6 hero-flow
-  integration in progress**
+- Current status: **M6 complete locally; production deployment/verification
+  pending**
 
-The deployed build proves the deterministic game, strict GPT-authored rule
-boundary, AI-seat selection, budget guard, and labelled fallback on desktop and
-mobile. The single polished end-to-end judging sequence is the active M6 gate.
+The release candidate proves the complete end-to-end sequence on desktop and
+mobile, including a strict GPT-authored rule boundary, AI-seat selection,
+budget guard, and labelled fallback.
 
 ## 60–90 second judge path
 
@@ -26,12 +26,13 @@ mobile. The single polished end-to-end judging sequence is the active M6 gate.
    no login or API key is required.
 2. Advance the guided replay. Each step highlights a program cell and the exact
    deterministic change it causes on the table.
-3. Select **Take control** and perform a highlighted legal move.
-4. Let the AI player take its turn from the same registered action system.
+3. Select **Take control now** and perform the highlighted **Move → azure-gate**.
+4. Ask Luna to choose Ivo's move from the same registered action system.
 5. Ask the Designer agent: “Whenever an explorer enters a blue gate, rotate the
    connected room clockwise.”
-6. Watch the validated source cell appear, enter a blue gate, and see the new
-   trigger rotate the room. Continue playing toward a real win or loss.
+6. Watch the validated source cell appear, move to Clockwork Archive, re-enter
+   Azure Gate, and see the new trigger rotate the connected room. Continue
+   playing toward a real win or loss.
 
 Expected result: the judge sees that the table is not an animation or an
 unconstrained model. It is a deterministic program with reversible commands,
@@ -76,10 +77,10 @@ Open <http://localhost:5173/> or <http://localhost:5173/judge>. The Vite server
 runs the Worker in `workerd`, so `/api/health` is available alongside the React
 app.
 
-The local app opens at the real deterministic Round 3 checkpoint and requires
-no model call. Live AI work begins in M5. When needed, copy `.env.example` to the already
+The local app opens at the immutable guided replay and requires no model call
+for its useful first state. When needed, copy `.env.example` to the already
 ignored `.dev.vars` and set `OPENAI_API_KEY` there only. The deterministic demo
-and all ordinary tests must continue to work with `AI_ENABLED=false`.
+and all ordinary tests continue to work with `AI_ENABLED=false`.
 
 ## Tests and validation
 

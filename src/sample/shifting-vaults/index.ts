@@ -1,5 +1,5 @@
 export { ShiftingVaultsGame } from "./game";
-export { createCuratedCheckpoint } from "./checkpoint";
+export { createCuratedCheckpoint, createGuidedReplayStep } from "./checkpoint";
 export { CURATED_REPLAY, roomFixtures } from "./fixtures";
 export {
   BLUE_GATE_HERO_SOURCE,

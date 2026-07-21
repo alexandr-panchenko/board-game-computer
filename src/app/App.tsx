@@ -6,6 +6,7 @@ import {
   BLUE_GATE_HERO_SOURCE,
   commitDesignerCandidate,
   createCuratedCheckpoint,
+  createGuidedReplayStep,
   CURATED_REPLAY,
   ShiftingVaultsGame,
   speculateDesignerCandidate,
@@ -21,6 +22,9 @@ import {
 export function App() {
   const isJudge = window.location.pathname === "/judge";
   const [game, setGame] = useState(() => createCuratedCheckpoint());
+  const [journey, setJourney] = useState<JourneyStage>("replay");
+  const [replayStep, setReplayStep] = useState<0 | 1 | 2 | 3>(0);
+  const [replayTrace, setReplayTrace] = useState<string[]>([]);
   const [, setGameRevision] = useState(0);
   const [designerPrompt, setDesignerPrompt] = useState(
     "Whenever an explorer enters a blue gate, rotate the connected room clockwise.",
@@ -56,12 +60,45 @@ export function App() {
         setGameMessage(
           `${option.label} committed as one reversible cell${labels.length > 0 ? ` · ${labels.join(" → ")}` : ""}.`,
         );
+        if (
+          journey === "takeover" &&
+          option.actorId === "human" &&
+          option.actionId === "move-explorer" &&
+          option.parameters.destinationId === "azure-gate"
+        ) {
+          const endTurn = game
+            .legalActions("human")
+            .find((candidate) => candidate.actionId === "end-turn");
+          if (endTurn !== undefined) game.perform(endTurn);
+          setJourney("human-done");
+          setGameMessage(
+            "Human move committed through performAction; Mara passes to Ivo for the AI step.",
+          );
+        } else if (
+          journey === "rule-done" &&
+          option.actionId === "move-explorer" &&
+          option.parameters.destinationId === "clockwork-archive"
+        ) {
+          setJourney("return-to-gate");
+          setGameMessage(
+            "Mara left Azure Gate. Re-enter it to fire the new Scenario.",
+          );
+        } else if (
+          journey === "return-to-gate" &&
+          option.actionId === "move-explorer" &&
+          option.parameters.destinationId === "azure-gate"
+        ) {
+          setJourney("triggered");
+          setGameMessage(
+            `Blue-gate Scenario fired · ${labels.join(" → ")} · play remains live.`,
+          );
+        }
       } else {
         setGameMessage(`${result.failure.code}: ${result.failure.message}`);
       }
       setGameRevision((value) => value + 1);
     },
-    [game],
+    [game, journey],
   );
 
   const handleDrop = useCallback(
@@ -98,13 +135,50 @@ export function App() {
   const reset = () => {
     setGame(createCuratedCheckpoint());
     setDesignerCells([]);
-    setGameMessage("Reset to the immutable guided checkpoint.");
+    setJourney("takeover");
+    setReplayStep(3);
+    setReplayTrace(CURATED_REPLAY[2]?.trace ?? []);
+    setGameMessage("Returned to the immutable demo checkpoint.");
   };
 
   const freshCopy = () => {
     setGame(new ShiftingVaultsGame());
     setDesignerCells([]);
+    setJourney("free-play");
+    setReplayStep(0);
+    setReplayTrace([]);
     setGameMessage("Created a deterministic fresh game from setup.");
+  };
+
+  const replayFromStart = () => {
+    setGame(createGuidedReplayStep(0));
+    setDesignerCells([]);
+    setJourney("replay");
+    setReplayStep(0);
+    setReplayTrace([]);
+    setGameMessage("Replay reset to the immutable pre-step state.");
+  };
+
+  const nextReplayStep = () => {
+    const next = Math.min(3, replayStep + 1) as 1 | 2 | 3;
+    setGame(createGuidedReplayStep(next));
+    setReplayStep(next);
+    setReplayTrace(CURATED_REPLAY[next - 1]?.trace ?? []);
+    setGameMessage(
+      next === 3
+        ? "Replay complete. The exact takeover checkpoint is ready."
+        : `Replay step ${String(next)} applied from canonical source.`,
+    );
+  };
+
+  const takeControl = () => {
+    setGame(createCuratedCheckpoint());
+    setJourney("takeover");
+    setReplayStep(3);
+    setReplayTrace(CURATED_REPLAY[2]?.trace ?? []);
+    setGameMessage(
+      "Takeover is live. Move Mara to the highlighted Azure Gate.",
+    );
   };
 
   const useExampleRule = () => {
@@ -126,6 +200,7 @@ export function App() {
       return;
     }
     setDesignerCells((cells) => [...cells, candidate]);
+    setJourney("rule-done");
     setDesignerStatus(
       "Labelled example rule validated and committed as a normal Designer cell.",
     );
@@ -182,6 +257,7 @@ export function App() {
       });
       if (result.ok) {
         setDesignerCells((cells) => [...cells, result.candidate]);
+        setJourney("rule-done");
         setDesignerStatus(
           `Live ${result.candidate.summary} Validated${result.revalidated ? " again against the changed room" : " locally"} and committed.`,
         );
@@ -228,12 +304,16 @@ export function App() {
       });
       if (stillLegal === undefined) throw new Error("AI_ACTION_UNAVAILABLE");
       performOption(stillLegal);
+      finishSeatTurn(game, "ai");
+      setJourney("ai-done");
       setGameMessage(
         `Live ${response.model}: ${response.choice.reason} · committed through performAction.`,
       );
     } catch {
       const fallback = game.chooseFallbackAction("ai");
       performOption(fallback);
+      finishSeatTurn(game, "ai");
+      setJourney("ai-done");
       setGameMessage(
         `Labelled deterministic fallback chose ${fallback.label} after the live AI path was unavailable.`,
       );
@@ -265,7 +345,7 @@ export function App() {
           <ol className="replay-list">
             {CURATED_REPLAY.map((cell, index) => (
               <li
-                className={index === 0 ? "active-cell" : undefined}
+                className={replayStep === index + 1 ? "active-cell" : undefined}
                 key={cell.id}
               >
                 <strong>{cell.label}</strong>
@@ -283,8 +363,7 @@ export function App() {
 
         <section className="table-panel" aria-label="Shifting Vaults tabletop">
           <p className="coachmark">
-            Drag Mara to a highlighted connected room, or use the semantic
-            action list.
+            {coachFor(journey, replayStep).instruction}
           </p>
           <TableCanvas snapshot={snapshot} onDrop={handleDrop} />
           <p className="table-summary">
@@ -296,13 +375,33 @@ export function App() {
 
         <aside className="panel inspector-panel">
           <h2>Actions & Inspector</h2>
+          <section className="journey-coach" aria-label="Judge path progress">
+            <p className="eyebrow">{coachFor(journey, replayStep).kicker}</p>
+            <h3>{coachFor(journey, replayStep).title}</h3>
+            <p>{coachFor(journey, replayStep).detail}</p>
+            {replayTrace.length > 0 ? (
+              <ol className="trace-list" aria-label="Replay execution trace">
+                {replayTrace.map((trace) => (
+                  <li key={trace}>{trace}</li>
+                ))}
+              </ol>
+            ) : null}
+          </section>
           {snapshot.result === null ? (
             <>
               <h3>Legal actions · {seatLabel(snapshot.activeSeatId)}</h3>
               <ul className="legal-action-list" aria-label="Legal actions">
                 {snapshot.legalActions.map((option) => (
                   <li key={option.id}>
-                    <button type="button" onClick={() => performOption(option)}>
+                    <button
+                      className={
+                        isRecommended(journey, option)
+                          ? "recommended-action"
+                          : undefined
+                      }
+                      type="button"
+                      onClick={() => performOption(option)}
+                    >
                       {actionLabel(option)}
                     </button>
                   </li>
@@ -350,6 +449,7 @@ export function App() {
                     type="button"
                     onClick={() => {
                       const results = game.playFallbackTurn("ai");
+                      setJourney("ai-done");
                       setGameMessage(
                         `Labelled deterministic fallback completed ${String(results.length)} legal AI cells.`,
                       );
@@ -465,9 +565,30 @@ export function App() {
       <footer className="actionbar">
         <span>{isJudge ? "Judge route ready" : "Demo route ready"}</span>
         <div>
-          <button type="button" onClick={reset}>
-            Reset
-          </button>
+          {journey === "replay" ? (
+            <>
+              <button
+                className="primary-journey-action"
+                type="button"
+                disabled={replayStep === 3}
+                onClick={nextReplayStep}
+              >
+                {replayStep === 3 ? "Replay complete" : "Next replay step"}
+              </button>
+              <button type="button" onClick={takeControl}>
+                Take control now
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={reset}>
+                Return to demo checkpoint
+              </button>
+              <button type="button" onClick={replayFromStart}>
+                Replay from start
+              </button>
+            </>
+          )}
           <button type="button" onClick={freshCopy}>
             Fresh copy
           </button>
@@ -476,6 +597,16 @@ export function App() {
     </main>
   );
 }
+
+type JourneyStage =
+  | "replay"
+  | "takeover"
+  | "human-done"
+  | "ai-done"
+  | "rule-done"
+  | "return-to-gate"
+  | "triggered"
+  | "free-play";
 
 function seatLabel(seatId: string): string {
   return seatId === "human" ? "Mara" : seatId === "ai" ? "Ivo" : seatId;
@@ -499,6 +630,110 @@ function actionConsequence(option: LegalActionOption): string {
     option.parameters.targetId ??
     "current turn";
   return `${option.label} affects ${target}; the browser retains and revalidates literal arguments.`;
+}
+
+function finishSeatTurn(game: ShiftingVaultsGame, seatId: string): void {
+  if (game.snapshot().activeSeatId !== seatId) return;
+  const endTurn = game
+    .legalActions(seatId)
+    .find((option) => option.actionId === "end-turn");
+  if (endTurn !== undefined) game.perform(endTurn);
+}
+
+function isRecommended(
+  journey: JourneyStage,
+  option: LegalActionOption,
+): boolean {
+  if (option.actionId !== "move-explorer") return false;
+  const destination = option.parameters.destinationId;
+  return (
+    (journey === "takeover" && destination === "azure-gate") ||
+    (journey === "rule-done" && destination === "clockwork-archive") ||
+    (journey === "return-to-gate" && destination === "azure-gate")
+  );
+}
+
+function coachFor(journey: JourneyStage, replayStep: number) {
+  switch (journey) {
+    case "replay":
+      return {
+        kicker: `Guided replay · ${String(replayStep)} / 3`,
+        title:
+          replayStep === 3
+            ? "Causality proven—take control"
+            : "Advance source, trace, and table together",
+        instruction:
+          replayStep === 3
+            ? "The deterministic checkpoint is ready. Take control when you are ready."
+            : "Press Next replay step to apply the highlighted canonical cell.",
+        detail:
+          replayStep === 0
+            ? "No AI request runs on load. Each replay step replaces the inspected copy from immutable source."
+            : "The highlighted source, ordered trace, and visible table state describe the same deterministic step.",
+      };
+    case "takeover":
+      return {
+        kicker: "Takeover · Human",
+        title: "Move Mara to Azure Gate",
+        instruction:
+          "Take control: drag Mara or use the highlighted Move → azure-gate action.",
+        detail:
+          "The move is a registered Player cell. The demo then passes cleanly to Ivo.",
+      };
+    case "human-done":
+      return {
+        kicker: "Takeover · AI player",
+        title: "Let Ivo choose a legal action",
+        instruction:
+          "Ask GPT-5.6 Luna for Ivo's move, or use the labelled deterministic fallback.",
+        detail:
+          "Only opaque offered options reach the model; the browser revalidates the choice.",
+      };
+    case "ai-done":
+      return {
+        kicker: "Live design",
+        title: "Add the blue-gate rule",
+        instruction:
+          "Submit the prepared GPT-5.6 Designer request, or use the labelled example rule.",
+        detail:
+          "Source must parse, validate, execute speculatively, and roll back exactly before commit.",
+      };
+    case "rule-done":
+      return {
+        kicker: "Rule committed · Trigger setup",
+        title: "Leave Azure Gate",
+        instruction:
+          "Use the highlighted Move → clockwork-archive action, then re-enter Azure Gate.",
+        detail:
+          "The connected Mirror Gallery is still unoccupied, so the new Scenario can rotate it.",
+      };
+    case "return-to-gate":
+      return {
+        kicker: "Rule committed · Trigger now",
+        title: "Re-enter Azure Gate",
+        instruction:
+          "Use the highlighted Move → azure-gate action and watch the deterministic cascade.",
+        detail:
+          "The trace will include entity entry, Scenario match, and linked-room rotation.",
+      };
+    case "triggered":
+      return {
+        kicker: "Hero path complete",
+        title: "The changed game remains playable",
+        instruction:
+          "Continue toward a real ending, return to the checkpoint, replay, or create a fresh copy.",
+        detail:
+          "The rule is a normal reversible cell; later actions still use the same runtime.",
+      };
+    case "free-play":
+      return {
+        kicker: "Fresh deterministic copy",
+        title: "Play from setup to an ending",
+        instruction:
+          "Choose any legal action. The complete game can end in escape or vault collapse.",
+        detail: "No OpenAI request is required to play the full sample.",
+      };
+  }
 }
 
 function inspectionFor(game: ShiftingVaultsGame): string {

@@ -107,6 +107,33 @@ button:disabled {
 .active-cell {
   color: #75d7b4;
 }
+.journey-coach {
+  margin: 12px 0 18px;
+  border: 1px solid #47665b;
+  border-radius: 12px;
+  padding: 12px;
+  background: #13231f;
+}
+.journey-coach p {
+  margin: 8px 0 0;
+  color: #c5d7d0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.trace-list {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  color: #ffe4a5;
+  font-size: 12px;
+}
+.recommended-action {
+  border-color: #65d6b0;
+  box-shadow: 0 0 0 2px #65d6b044;
+}
+.primary-journey-action {
+  border-color: #65d6b0;
+  background: #1d5143;
+}
 .designer-cell {
   border-left: 3px solid #d6ad65;
   padding-left: 10px;
