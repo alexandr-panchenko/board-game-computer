@@ -9,11 +9,13 @@ runtime and game behavior arrive in the following milestones.
 
 ## Live demo
 
-- Main: `https://<production-host>/`
-- Judge route: `https://<production-host>/judge`
-- Current status: **not deployed yet**
+- Main: <https://board-game-computer.sanocks.workers.dev/>
+- Judge route: <https://board-game-computer.sanocks.workers.dev/judge>
+- Current status: **M2 vertical slice deployed and verified**
 
-Replace these placeholders only after the production deployment is verified.
+The deployed slice proves the React shell, Worker routes, static assets, and
+SQLite Durable Object binding. The reversible runtime and complete judge flow
+remain milestone work and are not represented as finished here.
 
 ## 60–90 second judge path
 

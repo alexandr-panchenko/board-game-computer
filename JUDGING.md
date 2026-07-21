@@ -2,10 +2,14 @@
 
 ## Demo
 
-- URL: `https://<production-host>/judge`
+- URL: <https://board-game-computer.sanocks.workers.dev/judge>
 - Login: none
 - User API key: not required
 - Best path: desktop or mobile modern browser
+
+Current implementation status: M2 is a deployed vertical slice. The complete
+steps below are the binding release target and are not yet available end to
+end.
 
 ## Steps
 

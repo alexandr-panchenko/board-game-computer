@@ -33,6 +33,27 @@ not evidence.
   `scripts`, and `tests/{unit,workers,e2e}`.
 - Implementation commit: `9e78db4`.
 
+### M2 — Deployable vertical slice
+
+- Date: 2026-07-21
+- Production URL: `https://board-game-computer.sanocks.workers.dev/`.
+- Judge URL: `https://board-game-computer.sanocks.workers.dev/judge`.
+- Implementation commit: `7d7f276`.
+- Active Cloudflare deployment version:
+  `92b20a95-496f-4042-b93a-4ea25623b78d`; deployment list showed 100% traffic.
+- Verified production responses: `/` 200, `/judge` 200, `/api/health` returned
+  `vertical-slice`, `/api/version` reported the deployed commit, and
+  `/api/room-health` confirmed `RoomObject` with SQLite storage.
+- Production Playwright: desktop and mobile projects both passed
+  `production shell opens the responsive judge route` against the public URL.
+- Local evidence screenshots:
+  `evidence/local/m2/desktop-judge.png` and
+  `evidence/local/m2/mobile-judge.png` (gitignored pending curated evidence).
+- Failure/fix evidence: the first `/judge` request exposed a missing Assets
+  binding as Cloudflare error 1101; a Worker tail identified `env.ASSETS` as
+  undefined, `wrangler.jsonc` was corrected, full validation reran, and the
+  repaired production route returned 200.
+
 ## Requirements and judging evidence
 
 | Status | Requirement / criterion | Claim to verify | Exact evidence required | URL/file/video timestamp | Verification method |
