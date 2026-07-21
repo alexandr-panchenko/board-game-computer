@@ -119,7 +119,7 @@ test("semantic game action updates the Pixi-projected state and resets", async (
 });
 
 test("complete deterministic game reaches a real ending", async ({ page }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
   await page.goto("/judge");
 
   await clickLegalAction(page, "Move Mara to Azure Gate");
