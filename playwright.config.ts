@@ -9,6 +9,8 @@ export default defineConfig({
   reporter: "line",
   use: {
     baseURL: remoteBaseUrl ?? "http://127.0.0.1:41737",
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
     trace: "retain-on-failure",
   },
   projects: [

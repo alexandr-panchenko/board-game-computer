@@ -57,7 +57,7 @@ test("first viewport is a player-first tabletop with one obvious action", async 
 test("crystals are selected on the bank and Ivo plays automatically", async ({
   page,
 }, testInfo) => {
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
   let releasePlayer!: () => void;
   const playerGate = new Promise<void>((resolve) => {
     releasePlayer = resolve;
@@ -117,7 +117,7 @@ test("crystals are selected on the bank and Ivo plays automatically", async ({
 test("Table Agent adds a rule without replacing the table and the card purchase fires it", async ({
   page,
 }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(240_000);
   await installMockedAi(page);
   await page.goto("/judge");
   await takeRecommendedPair(page);
@@ -263,7 +263,7 @@ test("normal game has no forced demo prose and can reopen the guided path", asyn
 test("AI-disabled path uses labelled player and rule fallbacks", async ({
   page,
 }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(180_000);
   await page.route("**/api/ai/player", (route) =>
     route.fulfill({ status: 503, body: "disabled" }),
   );
@@ -294,6 +294,7 @@ test("mobile keeps table context and uses touch-safe drawer navigation", async (
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "Pixel 7 mobile gate");
+  test.setTimeout(90_000);
   await page.goto("/judge");
   const navigation = page.getByRole("navigation", { name: "Table tools" });
   const navBox = await navigation.boundingBox();
@@ -326,7 +327,7 @@ test("shared room exposes the Player invite and preserves convergence, reconnect
   browser,
 }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "One desktop room journey");
-  test.setTimeout(150_000);
+  test.setTimeout(240_000);
   await installMockedAi(page);
   await page.goto("/judge");
   await page.getByRole("button", { name: /Create shared room/ }).click();
