@@ -31,7 +31,7 @@ not evidence.
   `tests/workers/health.test.ts`, and `tests/e2e/judge-shell.spec.ts`.
 - Initial implementation tree: `src/app`, `src/shared`, `src/worker`,
   `scripts`, and `tests/{unit,workers,e2e}`.
-- Commit SHA: `PENDING_M1_COMMIT`.
+- Implementation commit: `9e78db4`.
 
 ## Requirements and judging evidence
 
