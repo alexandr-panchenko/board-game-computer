@@ -42,15 +42,18 @@ plus Worker/two-browser rebase tests. Weakness: Codex Session ID and a concise
 video proof are still absent. Highest-impact changes: show patch undo/rebase in
 the video; add exact Codex evidence; keep the final tag identical to production.
 
-### Design — 8/10
+### Design — 9/10
 
-The first screen is coherent, responsive, and leads from replay to action to
-live rule change, with usable fallback and real endings. Strongest evidence:
-36 production browser checks; desktop/mobile M8 screenshots; literal
-`JUDGING.md`. Weakness: the desktop page is information-dense and the Designer
-control is below the central hero content. Highest-impact changes: open the
-video on replay/table causality; use a tight thumbnail crop; demonstrate the
-90-second path without repository explanation.
+The corrected first screen states the product and objective, makes the board
+dominant, exposes one sticky journey action, and leads through persistent
+six-stage progress. Play, Change rules, and Program are separate surfaces;
+Advanced is collapsed; the Pixel 7 layout uses fixed bottom navigation rather
+than a stacked desktop document. Strongest evidence: the before/after audit in
+`docs/16-HUMAN-UX-AUDIT.md`, 42 desktop/mobile browser checks, and the literal
+`JUDGING.md`. Remaining weakness: visual taste and real-device feel have only an
+internal review, not independent human feedback. Highest-impact next step: use
+the corrected UI in a normal-speed narrated video and get a physical-device
+human pass without adding more product scope.
 
 ### Potential Impact — 7/10
 
@@ -77,37 +80,42 @@ shows the live GPT-authored rule visibly changing the still-playable table.
 
 ## C. First-impression judge
 
-The requested thumbnail and first 20 seconds do not yet exist, so a complete
-first-impression review is impossible.
+The requested thumbnail and first 20 seconds still do not exist, so video
+first-impression evidence remains incomplete. The application itself received a
+separate release-blocking correction recorded in
+`docs/16-HUMAN-UX-AUDIT.md`.
 
-From `/judge` alone: after five seconds it reads as a polished digital board;
-after ten seconds the Script & Replay column suggests source drives play; after
-twenty seconds the action inspector makes the running-program idea credible.
-It appears intended for tabletop designers and groups testing house rules. The
-memorable visual is Azure Gate connected to a source-driven rotating room. The
-main doubt is whether the rule change is live or staged. First friction is the
-dense three-column desktop scan and, on mobile, the long scroll from table to
-Designer. GPT-5.6 becomes meaningful only once its validated source and later
-trigger are shown. I would continue because the replay/takeover controls are
-specific and no login blocks testing.
+From the corrected `/judge` candidate alone, a five-second internal review can
+now answer all required questions without scrolling: the statement says it is a
+board game that rewrites itself; the exact objective names 2 relics, Gatehouse,
+and Threat 10; the single gold CTA says `Next step`; `Change rules` is a
+first-level surface; and the HUD/legend identify Mara with a gold `M`. Desktop
+no longer opens as a three-column console. Pixel 7 shows the statement,
+objective, HUD, full table, persistent progress, sticky CTA, and fixed product
+tabs in its initial viewport. The main remaining doubt is still whether the
+rule change is genuinely live, which the normal-speed Designer/rotation segment
+must prove.
 
-Exactly five changes ranked by first-impression impact:
+Exactly five remaining changes ranked by first-impression impact:
 
-1. Make the video’s first action advance a replay cell while table and trace change.
-2. Use a 3:2 thumbnail crop centered on Azure Gate, one source cell, and “A tabletop that rewrites itself.”
-3. Show GPT-5.6 source commit and the resulting room rotation within the first minute.
-4. State the target user/problem in one author-voice sentence before technical detail.
-5. Record the literal path at normal speed and remove pauses that push the hero moment beyond 90 seconds.
+1. Record the corrected literal path at normal speed and show the live model
+   indicator before the rule commits.
+2. Show the committed Program cell and Mirror Gallery rotation in the same
+   short segment.
+3. Use a reviewed crop of the corrected board, objective, and product statement
+   for the thumbnail.
+4. Obtain one independent physical-device first-impression pass and record only
+   concrete findings.
+5. Keep author copy focused on the playable outcome before interpreter detail.
 
 ## D. Browser-agent judge path
 
-Automated clean desktop/mobile production runs passed all 36 steps, including
+The corrected local candidate passed 42 clean desktop/mobile checks, including
+human-first hierarchy, slug-free actions, keyboard focus, mobile navigation,
 fallback, cancellation, reset, both endings, multiplayer convergence,
-reconnect, and fork, with no console-breaking errors. The exact M9 production
-candidate then completed a real Luna-plus-Designer path in 10,606 ms: both
-responses were live, the locally validated Scenario committed and fired, and
-the game remained playable. `evidence/local/m9-production-live-complete.png`
-was visually checked and contains no capability or credential. Visible keyboard
-focus also passed with a 3 px solid outline on the first semantic action. A
-human physical-device/timed narration pass remains pending, so this audit is
+reconnect, and fork, with no console-breaking errors. The prior exact production
+candidate completed a real Luna-plus-Designer path in 10,606 ms; the corrected
+candidate still requires its post-deploy live repeat. Before/after captures were
+visually checked without capability values or credentials. A human
+physical-device/timed narration pass remains pending, so this audit remains
 **CANDIDATE PASS, HUMAN PASS PENDING**.

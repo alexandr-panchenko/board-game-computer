@@ -10,6 +10,9 @@ import {
   CURATED_REPLAY,
   ShiftingVaultsGame,
   speculateDesignerCandidate,
+  type ReplayFixtureCell,
+  type VaultExplorer,
+  type VaultSnapshot,
 } from "../sample";
 import type { DesignerCandidate } from "../shared/ai";
 import { APP_NAME, LANGUAGE_VERSION } from "../shared/versions";
@@ -47,7 +50,12 @@ export function App() {
   );
   const [designerCells, setDesignerCells] = useState<DesignerCandidate[]>([]);
   const [gameMessage, setGameMessage] = useState(
-    "Fresh deterministic vault ready. Choose any highlighted legal action.",
+    "The guided checkpoint is ready. The board will change with each program cell.",
+  );
+  const [surface, setSurface] = useState<ProductSurface>("play");
+  const [showHowTo, setShowHowTo] = useState(false);
+  const [focusedRoomId, setFocusedRoomId] = useState<string | null>(
+    "clockwork-archive",
   );
   const [runtime] = useState(() => new RoomRuntime());
   const [source, setSource] = useState(
@@ -104,20 +112,15 @@ export function App() {
 
   const performOption = useCallback(
     (option: LegalActionOption) => {
+      const before = game.snapshot();
       const shared = sharedRef.current;
       const result = shared === null ? game.perform(option) : null;
       const succeeded =
         shared === null ? result?.ok === true : shared.proposeAction(option);
       if (succeeded) {
-        const labels =
-          result?.ok === true
-            ? result.commit.transaction.forward.trace.map(
-                (event) => event.label,
-              )
-            : ["optimistic shared cell"];
-        setGameMessage(
-          `${option.label} committed as one reversible cell${labels.length > 0 ? ` · ${labels.join(" → ")}` : ""}.`,
-        );
+        const targetId = actionTarget(option);
+        setFocusedRoomId(targetId);
+        setGameMessage(actionResultMessage(option, before));
         if (
           journey === "takeover" &&
           option.actorId === "human" &&
@@ -133,25 +136,28 @@ export function App() {
           }
           setJourney("human-done");
           setGameMessage(
-            "Human move committed through performAction; Mara passes to Ivo for the AI step.",
+            "Mara moved to Azure Gate through matching doors. Her guided turn is complete, so Ivo is next.",
           );
         } else if (
           journey === "rule-done" &&
+          option.actorId === "human" &&
           option.actionId === "move-explorer" &&
           option.parameters.destinationId === "clockwork-archive"
         ) {
           setJourney("return-to-gate");
           setGameMessage(
-            "Mara left Azure Gate. Re-enter it to fire the new Scenario.",
+            "Mara moved to Clockwork Archive. Azure Gate is now ready to be entered again.",
           );
         } else if (
           journey === "return-to-gate" &&
+          option.actorId === "human" &&
           option.actionId === "move-explorer" &&
           option.parameters.destinationId === "azure-gate"
         ) {
           setJourney("triggered");
+          setFocusedRoomId("mirror-gallery");
           setGameMessage(
-            `Blue-gate Scenario fired · ${labels.join(" → ")} · play remains live.`,
+            "The new rule fired: entering Azure Gate rotated Mirror Gallery clockwise. The game is still playable.",
           );
         }
       } else if (result?.ok === false) {
@@ -176,7 +182,10 @@ export function App() {
             candidate.parameters.destinationId === zoneId,
         );
       if (option === undefined) {
-        setGameMessage(`No legal move to ${zoneId}.`);
+        const zone = game.snapshot().zones[zoneId];
+        setGameMessage(
+          `That route to ${zone?.label ?? "the selected room"} is closed. Choose a glowing destination.`,
+        );
         return;
       }
       performOption(option);
@@ -210,9 +219,11 @@ export function App() {
     setGame(createCuratedCheckpoint());
     setDesignerCells([]);
     setJourney("takeover");
+    setSurface("play");
     setReplayStep(3);
     setReplayTrace(CURATED_REPLAY[2]?.trace ?? []);
     setGameMessage("Returned to the immutable demo checkpoint.");
+    setFocusedRoomId("clockwork-archive");
   };
 
   const freshCopy = () => {
@@ -220,9 +231,13 @@ export function App() {
     setGame(new ShiftingVaultsGame());
     setDesignerCells([]);
     setJourney("free-play");
+    setSurface("play");
     setReplayStep(0);
     setReplayTrace([]);
-    setGameMessage("Created a deterministic fresh game from setup.");
+    setGameMessage(
+      "A fresh vault is ready. Mara has 2 AP; move through a matching doorway or rotate a neighboring room.",
+    );
+    setFocusedRoomId("gatehouse");
   };
 
   const replayFromStart = () => {
@@ -230,9 +245,11 @@ export function App() {
     setGame(createGuidedReplayStep(0));
     setDesignerCells([]);
     setJourney("replay");
+    setSurface("play");
     setReplayStep(0);
     setReplayTrace([]);
     setGameMessage("Replay reset to the immutable pre-step state.");
+    setFocusedRoomId(null);
   };
 
   const nextReplayStep = () => {
@@ -240,6 +257,7 @@ export function App() {
     setGame(createGuidedReplayStep(next));
     setReplayStep(next);
     setReplayTrace(CURATED_REPLAY[next - 1]?.trace ?? []);
+    setFocusedRoomId(replayFocus(next));
     setGameMessage(
       next === 3
         ? "Replay complete. The exact takeover checkpoint is ready."
@@ -250,11 +268,13 @@ export function App() {
   const takeControl = () => {
     setGame(createCuratedCheckpoint());
     setJourney("takeover");
+    setSurface("play");
     setReplayStep(3);
     setReplayTrace(CURATED_REPLAY[2]?.trace ?? []);
     setGameMessage(
       "Takeover is live. Move Mara to the highlighted Azure Gate.",
     );
+    setFocusedRoomId("azure-gate");
   };
 
   const startSharedRoom = async () => {
@@ -310,10 +330,13 @@ export function App() {
     }
     setDesignerCells((cells) => [...cells, candidate]);
     setJourney("rule-done");
+    setSurface("play");
     setDesignerStatus(
       "Labelled example rule validated and committed as a normal Designer cell.",
     );
-    setGameMessage("The example blue-gate Scenario is active and reversible.");
+    setGameMessage(
+      "The example rule passed local validation and is active. Move Mara away, then back through Azure Gate to trigger it.",
+    );
     setGameRevision((value) => value + 1);
   };
 
@@ -385,6 +408,7 @@ export function App() {
       if (result.ok) {
         setDesignerCells((cells) => [...cells, result.candidate]);
         setJourney("rule-done");
+        setSurface("play");
         setDesignerStatus(
           `Live ${result.candidate.summary} Validated${result.revalidated ? " again against the changed room" : " locally"} and committed.`,
         );
@@ -450,7 +474,10 @@ export function App() {
       if (stillLegal === undefined) throw new Error("AI_ACTION_UNAVAILABLE");
       performOption(stillLegal);
       finishSeatTurn(game, "ai", performOption);
-      setJourney("ai-done");
+      if (journey === "human-done") {
+        setJourney("ai-done");
+        setSurface("rules");
+      }
       setGameMessage(
         `Live ${response.model}: ${response.choice.reason} · committed through performAction.`,
       );
@@ -464,7 +491,10 @@ export function App() {
       const fallback = game.chooseFallbackAction("ai");
       performOption(fallback);
       finishSeatTurn(game, "ai", performOption);
-      setJourney("ai-done");
+      if (journey === "human-done") {
+        setJourney("ai-done");
+        setSurface("rules");
+      }
       setGameMessage(
         `Labelled deterministic fallback chose ${fallback.label} after the live AI path was unavailable.`,
       );
@@ -476,216 +506,395 @@ export function App() {
     }
   };
 
+  const runAiFallback = () => {
+    const results = [];
+    for (
+      let step = 0;
+      step < 12 && game.snapshot().activeSeatId === "ai";
+      step += 1
+    ) {
+      const option = game.chooseFallbackAction("ai");
+      if (sharedRef.current === null) {
+        results.push(game.perform(option));
+      } else {
+        const before = game.snapshot().stateHash;
+        performOption(option);
+        results.push({ ok: game.snapshot().stateHash !== before });
+      }
+      if (option.actionId === "end-turn") break;
+    }
+    if (journey === "human-done") {
+      setJourney("ai-done");
+      setSurface("rules");
+    }
+    setGameMessage(
+      `Ivo's deterministic fallback completed ${String(results.length)} legal actions. The same rule-changing step is ready.`,
+    );
+    setGameRevision((value) => value + 1);
+  };
+
+  const coach = coachFor(journey, replayStep);
+  const recommended = snapshot.legalActions.find((option) =>
+    isRecommended(journey, option),
+  );
+  const freePlayPrimary = preferredFreePlayAction(snapshot.legalActions);
+  const primaryAction = (() => {
+    if (journey === "replay")
+      return replayStep < 3
+        ? {
+            label: "Next step",
+            hint: "Run the next reversible cell",
+            onClick: nextReplayStep,
+            disabled: false,
+          }
+        : {
+            label: "Take control",
+            hint: "Mara is ready for you",
+            onClick: takeControl,
+            disabled: false,
+          };
+    if (journey === "takeover" && recommended !== undefined)
+      return {
+        ...optionPrimary(recommended, snapshot),
+        onClick: () => performOption(recommended),
+      };
+    if (journey === "human-done")
+      return {
+        label: aiPlayerBusy ? "Ivo is choosing…" : "Let Ivo move",
+        hint: "Powered by GPT-5.6 Luna",
+        onClick: () => void askAiPlayer(),
+        disabled: aiPlayerBusy,
+      };
+    if (snapshot.activeSeatId === "ai")
+      return {
+        label: aiPlayerBusy ? "Ivo is choosing…" : "Let Ivo move",
+        hint: "Powered by GPT-5.6 Luna",
+        onClick: () => void askAiPlayer(),
+        disabled: aiPlayerBusy,
+      };
+    if (journey === "ai-done")
+      return {
+        label: designerBusy ? "Validating the rule…" : "Change the rules",
+        hint: "GPT-5.6 proposes; the runtime validates",
+        onClick: () => void askDesigner(),
+        disabled: designerBusy || sharedView?.role === "player",
+      };
+    if (
+      (journey === "rule-done" || journey === "return-to-gate") &&
+      recommended !== undefined
+    )
+      return {
+        ...optionPrimary(recommended, snapshot),
+        onClick: () => performOption(recommended),
+      };
+    if (journey === "triggered")
+      return {
+        label: "Keep playing",
+        hint: "The new rule remains active",
+        onClick: () => setJourney("free-play"),
+        disabled: false,
+      };
+    if (freePlayPrimary !== undefined)
+      return {
+        ...optionPrimary(freePlayPrimary, snapshot),
+        onClick: () => performOption(freePlayPrimary),
+      };
+    return {
+      label: "Start a fresh game",
+      hint: "Return to the deterministic setup",
+      onClick: freshCopy,
+      disabled: false,
+    };
+  })();
+
+  const currentCell = currentProgramCell(replayStep, designerCells);
+  const secondaryActions = snapshot.legalActions
+    .filter((option) => option.id !== recommended?.id)
+    .slice(0, 2);
+
   return (
     <main className="app-shell">
-      <header className="topbar">
-        <div>
+      <header className="product-hero">
+        <div className="brand-lockup">
           <p className="eyebrow">{APP_NAME}</p>
-          <h1>Shifting Vaults</h1>
+          <h1>A board game that rewrites itself.</h1>
+          <p className="product-explainer">
+            Play a complete tabletop game, then let AI propose a rule that the
+            game validates, commits, and can undo.
+          </p>
         </div>
-        <div className="status" aria-label="Game status">
-          <span>Round {snapshot.round}</span>
-          <span>{seatLabel(snapshot.activeSeatId)} turn</span>
-          <span>Threat {snapshot.threat.value} / 10</span>
+        <div className="hero-actions">
+          <span className="route-badge">
+            {isJudge ? "Guided demo" : "Playable demo"}
+          </span>
+          <button type="button" onClick={freshCopy}>
+            New game
+          </button>
+          <button type="button" onClick={() => setShowHowTo(true)}>
+            How to play
+          </button>
         </div>
       </header>
 
-      <section className="workspace" aria-label="Board game workspace">
-        <aside className="panel script-panel">
-          <h2>Script & Replay</h2>
-          <p className="muted">{LANGUAGE_VERSION}</p>
-          <p className="replay-callout">
-            This table is a running program. Each action below is canonical
-            source with a deterministic trace.
+      <section className="game-heading" aria-labelledby="game-title">
+        <div>
+          <p className="eyebrow">The shifting-room adventure</p>
+          <h2 id="game-title">Shifting Vaults</h2>
+          <p className="objective">
+            Find 2 relics and return to Gatehouse before Threat reaches 10.
           </p>
-          <ol className="replay-list">
-            {CURATED_REPLAY.map((cell, index) => (
-              <li
-                className={replayStep === index + 1 ? "active-cell" : undefined}
-                key={cell.id}
-              >
-                <strong>{cell.label}</strong>
-                <code>{cell.source}</code>
-              </li>
-            ))}
-            {designerCells.map((cell, index) => (
-              <li className="designer-cell" key={`designer-${String(index)}`}>
-                <strong>Designer · {cell.summary}</strong>
-                <code>{cell.source}</code>
-              </li>
-            ))}
-          </ol>
-        </aside>
+        </div>
+        <GameHud snapshot={snapshot} mara={mara} ivo={ivo} />
+      </section>
 
-        <section className="table-panel" aria-label="Shifting Vaults tabletop">
-          <p className="coachmark">
-            {coachFor(journey, replayStep).instruction}
-          </p>
-          <TableCanvas snapshot={snapshot} onDrop={handleDrop} />
-          <p className="table-summary">
-            Objective: recover 2 relics and return to Gatehouse · Mara:{" "}
-            {mara.zoneId}, {mara.relicCount} relics, {mara.actionPoints} AP ·
-            Ivo: {ivo.zoneId}, {ivo.relicCount} relics, {ivo.actionPoints} AP
-          </p>
-        </section>
+      <StageProgress journey={journey} replayStep={replayStep} />
 
-        <aside className="panel inspector-panel">
-          <h2>Actions & Inspector</h2>
-          <section className="journey-coach" aria-label="Judge path progress">
-            <p className="eyebrow">{coachFor(journey, replayStep).kicker}</p>
-            <h3>{coachFor(journey, replayStep).title}</h3>
-            <p>{coachFor(journey, replayStep).detail}</p>
-            {replayTrace.length > 0 ? (
-              <ol className="trace-list" aria-label="Replay execution trace">
-                {replayTrace.map((trace) => (
-                  <li key={trace}>{trace}</li>
-                ))}
-              </ol>
-            ) : null}
-          </section>
-          {snapshot.result === null ? (
-            <>
-              <h3>Legal actions · {seatLabel(snapshot.activeSeatId)}</h3>
-              <ul className="legal-action-list" aria-label="Legal actions">
-                {snapshot.legalActions.map((option) => (
-                  <li key={option.id}>
-                    <button
-                      className={
-                        isRecommended(journey, option)
-                          ? "recommended-action"
-                          : undefined
-                      }
-                      type="button"
-                      onClick={() => performOption(option)}
-                    >
-                      {actionLabel(option)}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <div className="game-history-actions">
-                <button
-                  type="button"
-                  disabled={sharedView !== null}
-                  onClick={() => {
-                    setGameMessage(
-                      game.runtime.undo()
-                        ? "Applied the game cell inverse patch."
-                        : "No game cell to undo.",
-                    );
-                    setGameRevision((value) => value + 1);
-                  }}
-                >
-                  Undo game cell
-                </button>
-                <button
-                  type="button"
-                  disabled={sharedView !== null}
-                  onClick={() => {
-                    setGameMessage(
-                      game.runtime.redo()
-                        ? "Reapplied the game cell forward patch."
-                        : "No game cell to redo.",
-                    );
-                    setGameRevision((value) => value + 1);
-                  }}
-                >
-                  Redo game cell
-                </button>
-              </div>
-              {snapshot.activeSeatId === "ai" ? (
-                <div className="ai-player-actions">
-                  <button
-                    className="ai-turn-button"
-                    type="button"
-                    disabled={aiPlayerBusy}
-                    onClick={() => void askAiPlayer()}
-                  >
-                    {aiPlayerBusy
-                      ? "Luna is choosing…"
-                      : "Ask GPT-5.6 Luna for Ivo move"}
-                  </button>
-                  {aiPlayerBusy ? (
-                    <button
-                      className="ai-turn-button"
-                      type="button"
-                      onClick={() => aiPlayerAbortRef.current?.abort()}
-                    >
-                      Cancel Luna request
-                    </button>
-                  ) : null}
-                  <button
-                    className="ai-turn-button"
-                    type="button"
-                    onClick={() => {
-                      const results = [];
-                      for (
-                        let step = 0;
-                        step < 12 && game.snapshot().activeSeatId === "ai";
-                        step += 1
-                      ) {
-                        const option = game.chooseFallbackAction("ai");
-                        if (sharedRef.current === null) {
-                          results.push(game.perform(option));
-                        } else {
-                          const before = game.snapshot().stateHash;
-                          performOption(option);
-                          results.push({
-                            ok: game.snapshot().stateHash !== before,
-                          });
-                        }
-                        if (option.actionId === "end-turn") break;
-                      }
-                      setJourney("ai-done");
-                      setGameMessage(
-                        `Labelled deterministic fallback completed ${String(results.length)} legal AI cells.`,
-                      );
-                      setGameRevision((value) => value + 1);
-                    }}
-                  >
-                    Run Ivo fallback turn
-                  </button>
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <div className="game-result" role="status">
-              {snapshot.result.type === "explorer-escaped"
-                ? `${seatLabel(snapshot.result.winnerSeatId ?? "human")} escaped the vault!`
-                : "The vault collapsed."}
+      <nav className="surface-tabs" aria-label="Product sections">
+        {(["play", "rules", "program"] as const).map((name) => (
+          <button
+            aria-current={surface === name ? "page" : undefined}
+            className={surface === name ? "active" : undefined}
+            key={name}
+            type="button"
+            onClick={() => setSurface(name)}
+          >
+            {surfaceLabel(name)}
+          </button>
+        ))}
+      </nav>
+
+      <span
+        className="diagnostic-probe"
+        data-testid="game-state-hash"
+        aria-hidden="true"
+      >
+        {snapshot.stateHash}
+      </span>
+
+      {surface === "play" ? (
+        <section className="play-surface" aria-label="Play">
+          <section
+            className="table-panel"
+            aria-label="Shifting Vaults tabletop"
+          >
+            <div className="table-instruction">
+              <span className="instruction-icon" aria-hidden="true">
+                ✦
+              </span>
+              <span>{coach.instruction}</span>
             </div>
-          )}
-          <p className="runtime-message" role="status">
-            {gameMessage}
-          </p>
-          <p className="hand-summary">
-            Mara hand: {mara.hand.join(", ") || "empty"}
-          </p>
-          <dl className="runtime-state">
-            <dt>Game state hash</dt>
-            <dd data-testid="game-state-hash">{snapshot.stateHash}</dd>
-          </dl>
+            <TableCanvas
+              snapshot={snapshot}
+              onDrop={handleDrop}
+              focusedRoomId={focusedRoomId}
+            />
+            <div className="piece-legend" aria-label="Explorer positions">
+              <span>
+                <i className="piece-mark mara-mark">M</i> Mara ·{" "}
+                {roomName(snapshot, mara.zoneId)} · {mara.actionPoints} AP ·{" "}
+                {mara.relicCount}/2 relics
+              </span>
+              <span>
+                <i className="piece-mark ivo-mark">I</i> Ivo ·{" "}
+                {roomName(snapshot, ivo.zoneId)} · {ivo.actionPoints} AP ·{" "}
+                {ivo.relicCount}/2 relics
+              </span>
+            </div>
+          </section>
 
-          <section className="room-sharing" aria-label="Persistent shared room">
-            <h3>Persistent room</h3>
-            {sharedView === null ? (
+          <aside className="play-coach">
+            <section className="journey-coach" aria-label="Current guided step">
+              <p className="eyebrow">{coach.kicker}</p>
+              <h3>{coach.title}</h3>
+              <p>{coach.detail}</p>
+              <div className="trust-badges" aria-label="Technical safeguards">
+                <span>Reversible cell</span>
+                <span>Validated before commit</span>
+              </div>
+            </section>
+
+            <section className="outcome-card" aria-label="Latest table change">
+              <p className="eyebrow">What just happened</p>
+              <p className="runtime-message" role="status">
+                {gameMessage}
+              </p>
+              <dl>
+                <div>
+                  <dt>Why it was legal</dt>
+                  <dd>{legalReason(journey, snapshot)}</dd>
+                </div>
+                <div>
+                  <dt>What changed</dt>
+                  <dd>{changeSummary(journey, focusedRoomId, snapshot)}</dd>
+                </div>
+              </dl>
+            </section>
+
+            {snapshot.result === null ? (
               <>
+                {snapshot.activeSeatId === "ai" ? (
+                  <div className="secondary-stack">
+                    {aiPlayerBusy ? (
+                      <button
+                        type="button"
+                        onClick={() => aiPlayerAbortRef.current?.abort()}
+                      >
+                        Cancel Luna request
+                      </button>
+                    ) : null}
+                    <button type="button" onClick={runAiFallback}>
+                      Use deterministic Ivo fallback
+                    </button>
+                  </div>
+                ) : null}
+                {journey === "replay" && replayStep < 3 ? (
+                  <button
+                    className="quiet-action"
+                    type="button"
+                    onClick={takeControl}
+                  >
+                    Skip replay and take control
+                  </button>
+                ) : null}
+                {journey !== "replay" &&
+                journey !== "human-done" &&
+                secondaryActions.length > 0 ? (
+                  <div
+                    className="quick-actions"
+                    aria-label="Other useful actions"
+                  >
+                    {secondaryActions.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => performOption(option)}
+                      >
+                        {actionLabel(option, snapshot)}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                <details className="all-actions">
+                  <summary>
+                    All legal moves ({snapshot.legalActions.length})
+                  </summary>
+                  <ul className="legal-action-list" aria-label="Legal actions">
+                    {snapshot.legalActions.map((option) => (
+                      <li key={option.id}>
+                        <button
+                          type="button"
+                          onClick={() => performOption(option)}
+                        >
+                          {actionLabel(option, snapshot)}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </>
+            ) : (
+              <div className="game-result" role="status">
+                {snapshot.result.type === "explorer-escaped"
+                  ? `${seatLabel(snapshot.result.winnerSeatId ?? "human")} escaped the vault!`
+                  : "The vault collapsed."}
+              </div>
+            )}
+
+            <HandCards snapshot={snapshot} cardIds={mara.hand} />
+            <ProgramPeek
+              cell={currentCell}
+              trace={replayTrace}
+              onOpen={() => setSurface("program")}
+            />
+          </aside>
+        </section>
+      ) : null}
+
+      {surface === "rules" ? (
+        <section
+          className="single-surface rules-surface"
+          aria-label="Change rules"
+        >
+          <div className="surface-intro">
+            <p className="eyebrow">GPT-5.6 Designer</p>
+            <h2>Describe one change. The game proves it is safe first.</h2>
+            <p>
+              GPT-5.6 returns restricted source. Your browser parses it,
+              validates its capabilities, runs it speculatively, rolls it back
+              exactly, and only then commits it as a reversible cell.
+            </p>
+            <div className="trust-badges">
+              <span>Server-side API key</span>
+              <span>Validated locally</span>
+              <span>Atomic commit</span>
+            </div>
+          </div>
+          <section className="designer-agent" aria-label="Designer agent">
+            <label className="source-label" htmlFor="designer-prompt">
+              Rule request
+            </label>
+            <textarea
+              id="designer-prompt"
+              value={designerPrompt}
+              onChange={(event) => setDesignerPrompt(event.target.value)}
+              maxLength={1_000}
+            />
+            {journey === "ai-done" ? (
+              <p className="primary-pointer">
+                The primary action below sends this request.
+              </p>
+            ) : (
+              <button
+                className="designer-submit"
+                type="button"
+                disabled={designerBusy || sharedView?.role === "player"}
+                onClick={() => void askDesigner()}
+              >
+                {designerBusy
+                  ? "Validating the rule…"
+                  : designerRetry
+                    ? "Retry GPT-5.6 Designer"
+                    : "Ask GPT-5.6 Designer"}
+              </button>
+            )}
+            {designerBusy ? (
+              <button
+                type="button"
+                onClick={() => designerAbortRef.current?.abort()}
+              >
+                Cancel Designer request
+              </button>
+            ) : null}
+            <button
+              type="button"
+              disabled={sharedView?.role === "player"}
+              onClick={useExampleRule}
+            >
+              Try the example rule
+            </button>
+            <p className="designer-status" role="status">
+              {designerStatus}
+            </p>
+          </section>
+
+          <details className="room-sharing" aria-label="Persistent shared room">
+            <summary>Share this room</summary>
+            {sharedView === null ? (
+              <div className="details-body">
                 <p>
-                  Create a checkpoint room with separate Designer and Player
-                  capability links.
+                  Create separate Designer and Player capability links from this
+                  checkpoint.
                 </p>
                 <button
                   type="button"
                   disabled={sharingBusy}
                   onClick={() => void startSharedRoom()}
                 >
-                  {sharingBusy
-                    ? "Creating persistent room…"
-                    : "Create shared room"}
+                  {sharingBusy ? "Creating shared room…" : "Create shared room"}
                 </button>
-              </>
+              </div>
             ) : (
-              <>
+              <div className="details-body">
                 <p className="room-connection" role="status">
                   {sharedView.connection} · {sharedView.role} · seq{" "}
                   {sharedView.confirmedSeq}
@@ -743,153 +952,173 @@ export function App() {
                 {sharedView.forkUrl === undefined ? null : (
                   <a href={sharedView.forkUrl}>Open forked room</a>
                 )}
-                <p className="muted">
-                  Participants with a capability link can view room history.
-                </p>
-              </>
+              </div>
             )}
-          </section>
-
-          <section className="designer-agent" aria-label="Designer agent">
-            <h3>GPT-5.6 Designer</h3>
-            <label className="source-label" htmlFor="designer-prompt">
-              Prepared rule request
-            </label>
-            <textarea
-              id="designer-prompt"
-              value={designerPrompt}
-              onChange={(event) => setDesignerPrompt(event.target.value)}
-              maxLength={1_000}
-            />
-            <button
-              type="button"
-              disabled={designerBusy || sharedView?.role === "player"}
-              onClick={() => void askDesigner()}
-            >
-              {designerBusy
-                ? "Validating GPT-5.6…"
-                : designerRetry
-                  ? "Retry GPT-5.6 Designer"
-                  : "Ask GPT-5.6 Designer"}
-            </button>
-            {designerBusy ? (
-              <button
-                type="button"
-                onClick={() => designerAbortRef.current?.abort()}
-              >
-                Cancel Designer request
-              </button>
-            ) : null}
-            <button
-              type="button"
-              disabled={sharedView?.role === "player"}
-              onClick={useExampleRule}
-            >
-              Use labelled example rule
-            </button>
-            <p className="designer-status" role="status">
-              {designerStatus}
-            </p>
-          </section>
-
-          <details className="runtime-lab">
-            <summary>Reversible language lab</summary>
-            <label className="source-label" htmlFor="runtime-source">
-              Source cell
-            </label>
-            <textarea
-              id="runtime-source"
-              value={source}
-              onChange={(event) => setSource(event.target.value)}
-              spellCheck={false}
-            />
-            <div className="runtime-actions">
-              <button type="button" onClick={runCell}>
-                Run cell
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setRuntimeMessage(
-                    runtime.undo()
-                      ? "Applied inverse patch."
-                      : "Nothing to undo.",
-                  );
-                  setRuntimeRevision((value) => value + 1);
-                }}
-              >
-                Undo
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setRuntimeMessage(
-                    runtime.redo()
-                      ? "Applied forward patch."
-                      : "Nothing to redo.",
-                  );
-                  setRuntimeRevision((value) => value + 1);
-                }}
-              >
-                Redo
-              </button>
-            </div>
-            <p className="runtime-message" role="status">
-              {runtimeMessage}
-            </p>
-            <dl className="runtime-state">
-              <dt>Language hash</dt>
-              <dd data-testid="language-state-hash">{runtime.hash()}</dd>
-              <dt>Bindings</dt>
-              <dd>{JSON.stringify(runtime.bindings())}</dd>
-              <dt>Trace</dt>
-              <dd>{runtimeTrace}</dd>
-            </dl>
           </details>
-        </aside>
-      </section>
+        </section>
+      ) : null}
+
+      {surface === "program" ? (
+        <section
+          className="single-surface program-surface"
+          aria-label="Program and replay"
+        >
+          <div className="surface-intro">
+            <p className="eyebrow">The game is the program</p>
+            <h2>Every move is source, state change, and an inverse patch.</h2>
+            <p>
+              {LANGUAGE_VERSION} interprets a deliberate JavaScript subset—never
+              native eval.
+            </p>
+          </div>
+          <ProgramCell cell={currentCell} trace={replayTrace} featured />
+          <details className="full-program">
+            <summary>Expand the full room program</summary>
+            <ol className="replay-list">
+              {CURATED_REPLAY.map((cell) => (
+                <li key={cell.id}>
+                  <ProgramCell cell={cell} trace={cell.trace} />
+                </li>
+              ))}
+              {designerCells.map((cell, index) => (
+                <li className="designer-cell" key={`designer-${String(index)}`}>
+                  <strong>Designer · {cell.summary}</strong>
+                  <code>{cell.source}</code>
+                </li>
+              ))}
+            </ol>
+          </details>
+
+          <details className="advanced-panel">
+            <summary>Advanced diagnostics</summary>
+            <div className="advanced-grid">
+              <section>
+                <h3>Game history</h3>
+                <div className="game-history-actions">
+                  <button
+                    type="button"
+                    disabled={sharedView !== null}
+                    onClick={() => {
+                      setGameMessage(
+                        game.runtime.undo()
+                          ? "Undid the last game action."
+                          : "No game action to undo.",
+                      );
+                      setGameRevision((value) => value + 1);
+                    }}
+                  >
+                    Undo last move
+                  </button>
+                  <button
+                    type="button"
+                    disabled={sharedView !== null}
+                    onClick={() => {
+                      setGameMessage(
+                        game.runtime.redo()
+                          ? "Reapplied the last game action."
+                          : "No game action to redo.",
+                      );
+                      setGameRevision((value) => value + 1);
+                    }}
+                  >
+                    Redo last move
+                  </button>
+                </div>
+                <dl className="runtime-state">
+                  <dt>Game state hash</dt>
+                  <dd>{snapshot.stateHash}</dd>
+                  <dt>Route</dt>
+                  <dd>{isJudge ? "Judge" : "Demo"}</dd>
+                </dl>
+              </section>
+              <section className="runtime-lab">
+                <h3>Reversible language lab</h3>
+                <label className="source-label" htmlFor="runtime-source">
+                  Source cell
+                </label>
+                <textarea
+                  id="runtime-source"
+                  value={source}
+                  onChange={(event) => setSource(event.target.value)}
+                  spellCheck={false}
+                />
+                <div className="runtime-actions">
+                  <button type="button" onClick={runCell}>
+                    Run cell
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRuntimeMessage(
+                        runtime.undo()
+                          ? "Applied inverse patch."
+                          : "Nothing to undo.",
+                      );
+                      setRuntimeRevision((value) => value + 1);
+                    }}
+                  >
+                    Undo lab cell
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRuntimeMessage(
+                        runtime.redo()
+                          ? "Applied forward patch."
+                          : "Nothing to redo.",
+                      );
+                      setRuntimeRevision((value) => value + 1);
+                    }}
+                  >
+                    Redo lab cell
+                  </button>
+                </div>
+                <p className="runtime-message" role="status">
+                  {runtimeMessage}
+                </p>
+                <dl className="runtime-state">
+                  <dt>Language hash</dt>
+                  <dd data-testid="language-state-hash">{runtime.hash()}</dd>
+                  <dt>Bindings</dt>
+                  <dd>{JSON.stringify(runtime.bindings())}</dd>
+                  <dt>Trace</dt>
+                  <dd>{runtimeTrace}</dd>
+                </dl>
+              </section>
+            </div>
+          </details>
+        </section>
+      ) : null}
+
+      <div className="reset-strip" aria-label="Demo controls">
+        <button type="button" onClick={reset}>
+          Return to demo checkpoint
+        </button>
+        <button type="button" onClick={replayFromStart}>
+          Replay from start
+        </button>
+      </div>
 
       <footer className="actionbar">
-        <span>
-          {sharedView !== null
-            ? "Shared room live"
-            : isJudge
-              ? "Judge route ready"
-              : "Demo route ready"}
-        </span>
-        <div>
-          {journey === "replay" ? (
-            <>
-              <button
-                className="primary-journey-action"
-                type="button"
-                disabled={replayStep === 3}
-                onClick={nextReplayStep}
-              >
-                {replayStep === 3 ? "Replay complete" : "Next replay step"}
-              </button>
-              <button type="button" onClick={takeControl}>
-                Take control now
-              </button>
-            </>
-          ) : (
-            <>
-              <button type="button" onClick={reset}>
-                Return to demo checkpoint
-              </button>
-              <button type="button" onClick={replayFromStart}>
-                Replay from start
-              </button>
-            </>
-          )}
-          <button type="button" onClick={freshCopy}>
-            Fresh copy
-          </button>
-        </div>
+        <span className="action-hint">{primaryAction.hint}</span>
+        <button
+          className="primary-journey-action"
+          data-testid="primary-journey-action"
+          type="button"
+          disabled={primaryAction.disabled}
+          onClick={primaryAction.onClick}
+        >
+          {primaryAction.label}
+          <span aria-hidden="true"> →</span>
+        </button>
       </footer>
+
+      {showHowTo ? <HowToPlay onClose={() => setShowHowTo(false)} /> : null}
     </main>
   );
 }
+
+type ProductSurface = "play" | "rules" | "program";
 
 type JourneyStage =
   | "replay"
@@ -902,28 +1131,465 @@ type JourneyStage =
   | "shared"
   | "free-play";
 
+interface ProgramDisplayCell {
+  label: string;
+  source: string;
+  trace: string[];
+}
+
+function GameHud({
+  snapshot,
+  mara,
+  ivo,
+}: {
+  snapshot: VaultSnapshot;
+  mara: VaultExplorer;
+  ivo: VaultExplorer;
+}) {
+  const active = snapshot.activeSeatId === "human" ? mara : ivo;
+  return (
+    <div className="game-hud" aria-label="Game status">
+      <div className="hud-stat active-player">
+        <span className="hud-label">Active player</span>
+        <strong>{seatLabel(snapshot.activeSeatId)}</strong>
+        <span>Round {snapshot.round}</span>
+      </div>
+      <div className="hud-stat ap-stat">
+        <span className="hud-label">Action points</span>
+        <strong aria-label={`${String(active.actionPoints)} action points`}>
+          {Array.from({ length: 2 }, (_, index) => (
+            <i
+              className={index < active.actionPoints ? "filled" : undefined}
+              key={index}
+            />
+          ))}
+        </strong>
+        <span>{active.actionPoints} of 2</span>
+      </div>
+      <div className="hud-stat relic-stat">
+        <span className="hud-label">Relics</span>
+        <strong>◆ {active.relicCount} / 2</strong>
+        <span>for {seatLabel(snapshot.activeSeatId)}</span>
+      </div>
+      <div className="hud-stat threat-stat">
+        <span className="hud-label">Threat</span>
+        <strong>{snapshot.threat.value} / 10</strong>
+        <span className="threat-meter">
+          <i style={{ width: `${String(snapshot.threat.value * 10)}%` }} />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const journeyLabels = [
+  "Watch the program run",
+  "Take control",
+  "Let Ivo move",
+  "Change the rules",
+  "Trigger the new rule",
+  "Keep playing",
+] as const;
+
+function StageProgress({
+  journey,
+  replayStep,
+}: {
+  journey: JourneyStage;
+  replayStep: number;
+}) {
+  const active = journeyIndex(journey);
+  return (
+    <section className="stage-progress" aria-label="Guided demo progress">
+      <div className="progress-heading">
+        <span>Guided demo</span>
+        <strong>
+          {journey === "replay"
+            ? `${String(replayStep)} of 3 program cells`
+            : `Step ${String(active + 1)} of 6`}
+        </strong>
+      </div>
+      <ol>
+        {journeyLabels.map((label, index) => (
+          <li
+            className={
+              index === active
+                ? "active"
+                : index < active
+                  ? "complete"
+                  : undefined
+            }
+            key={label}
+            aria-current={index === active ? "step" : undefined}
+          >
+            <span>{index < active ? "✓" : String(index + 1)}</span>
+            {label}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function ProgramPeek({
+  cell,
+  trace,
+  onOpen,
+}: {
+  cell: ProgramDisplayCell;
+  trace: string[];
+  onOpen: () => void;
+}) {
+  return (
+    <section className="program-peek" aria-label="Current program cell">
+      <div>
+        <p className="eyebrow">Current program cell</p>
+        <strong>{cell.label}</strong>
+      </div>
+      <ol className="trace-list" aria-label="Replay execution trace">
+        {(trace.length > 0 ? trace : cell.trace).map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ol>
+      <button type="button" onClick={onOpen}>
+        Open Program
+      </button>
+    </section>
+  );
+}
+
+function ProgramCell({
+  cell,
+  trace,
+  featured = false,
+}: {
+  cell: ProgramDisplayCell | ReplayFixtureCell;
+  trace: string[];
+  featured?: boolean;
+}) {
+  return (
+    <article className={featured ? "program-cell featured" : "program-cell"}>
+      <p className="cell-badge">Reversible cell</p>
+      <h3>{cell.label}</h3>
+      <code>{cell.source}</code>
+      <div className="cell-arrow" aria-hidden="true">
+        ↓ deterministic trace
+      </div>
+      <ol
+        className="trace-list"
+        aria-label={featured ? "Replay execution trace" : undefined}
+      >
+        {(trace.length > 0 ? trace : "trace" in cell ? cell.trace : []).map(
+          (item) => (
+            <li key={item}>{item}</li>
+          ),
+        )}
+      </ol>
+    </article>
+  );
+}
+
+function HandCards({
+  snapshot,
+  cardIds,
+}: {
+  snapshot: VaultSnapshot;
+  cardIds: string[];
+}) {
+  return (
+    <section className="hand-cards" aria-label="Mara tactic cards">
+      <div>
+        <p className="eyebrow">Mara's tactic cards</p>
+        <span>Play one per turn</span>
+      </div>
+      <div className="card-row">
+        {cardIds.length === 0 ? (
+          <span className="empty-hand">No cards in hand</span>
+        ) : (
+          cardIds.map((id) => {
+            const card = snapshot.cards[id];
+            return (
+              <span
+                className={`tactic-card ${card?.kind ?? "unknown"}`}
+                key={id}
+              >
+                <i aria-hidden="true">{cardIcon(card?.kind)}</i>
+                <strong>{card?.label ?? "Tactic"}</strong>
+                <small>{cardEffect(card?.kind)}</small>
+              </span>
+            );
+          })
+        )}
+      </div>
+    </section>
+  );
+}
+
+function HowToPlay({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="modal-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        className="how-to-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="how-to-title"
+      >
+        <button
+          className="modal-close"
+          type="button"
+          aria-label="Close how to play"
+          onClick={onClose}
+        >
+          ×
+        </button>
+        <p className="eyebrow">Shifting Vaults</p>
+        <h2 id="how-to-title">How to play</h2>
+        <p className="how-to-objective">
+          Find 2 relics and return to Gatehouse before Threat reaches 10.
+        </p>
+        <div className="rules-grid">
+          <article>
+            <span>①</span>
+            <h3>Spend 2 AP</h3>
+            <p>
+              Each explorer gets 2 action points. Moving, rotating, and
+              searching cost 1 AP.
+            </p>
+          </article>
+          <article>
+            <span>↔</span>
+            <h3>Match doors</h3>
+            <p>
+              You can move only where two room doors face each other. Rotate an
+              empty neighbor to open a route.
+            </p>
+          </article>
+          <article>
+            <span>?</span>
+            <h3>Search rooms</h3>
+            <p>
+              Hidden tokens are either relics or hazards. Relics help you
+              escape; hazards raise Threat.
+            </p>
+          </article>
+          <article>
+            <span>✦</span>
+            <h3>Use one tactic</h3>
+            <p>
+              Sprint moves, Gear rotates, Survey reveals a token, and Ward
+              lowers Threat.
+            </p>
+          </article>
+          <article>
+            <span>↻</span>
+            <h3>End the turn</h3>
+            <p>
+              Mara passes to Ivo. After Ivo, the round advances and Threat rises
+              by 1.
+            </p>
+          </article>
+          <article>
+            <span>◆</span>
+            <h3>Reach an ending</h3>
+            <p>
+              Return one explorer with 2 relics to win. At Threat 10, the vault
+              collapses.
+            </p>
+          </article>
+        </div>
+        <button className="modal-done" type="button" onClick={onClose}>
+          Got it—show me the vault
+        </button>
+      </section>
+    </div>
+  );
+}
+
 function seatLabel(seatId: string): string {
   return seatId === "human" ? "Mara" : seatId === "ai" ? "Ivo" : seatId;
 }
 
-function actionLabel(option: LegalActionOption): string {
-  const target =
-    option.parameters.destinationId ??
-    option.parameters.roomId ??
-    option.parameters.targetId;
-  const card = option.parameters.cardId;
-  return [option.label, card, target === undefined ? undefined : `→ ${target}`]
-    .filter((part): part is string => part !== undefined)
-    .join(" ");
+function actionLabel(
+  option: LegalActionOption,
+  snapshot: VaultSnapshot,
+): string {
+  const actor = seatLabel(option.actorId);
+  const targetId = actionTarget(option);
+  const target = targetId === null ? null : roomName(snapshot, targetId);
+  if (option.actionId === "move-explorer")
+    return `Move ${actor} to ${target ?? "the next room"}`;
+  if (option.actionId === "rotate-adjacent-room")
+    return `Rotate ${target ?? "a nearby room"} clockwise`;
+  if (option.actionId === "search-room")
+    return `Search ${target ?? "this room"}`;
+  if (option.actionId === "end-turn") return `End ${actor}'s turn`;
+  if (option.actionId === "play-tactic-card") {
+    const card = snapshot.cards[option.parameters.cardId ?? ""];
+    const label = card?.label ?? "Tactic";
+    if (card?.kind === "sprint")
+      return `Play ${label} · Move to ${target ?? "a connected room"}`;
+    if (card?.kind === "gear")
+      return `Play ${label} · Rotate ${target ?? "a nearby room"}`;
+    if (card?.kind === "survey")
+      return `Play ${label} · Reveal ${target ?? "a nearby token"}`;
+    if (card?.kind === "ward") return `Play ${label} · Lower Threat`;
+    return `Play ${label}`;
+  }
+  return option.label;
 }
 
 function actionConsequence(option: LegalActionOption): string {
-  const target =
+  return `${option.label} changes only the offered target; the browser retains and revalidates the literal arguments.`;
+}
+
+function actionTarget(option: LegalActionOption): string | null {
+  return (
     option.parameters.destinationId ??
     option.parameters.roomId ??
     option.parameters.targetId ??
-    "current turn";
-  return `${option.label} affects ${target}; the browser retains and revalidates literal arguments.`;
+    null
+  );
+}
+
+function actionResultMessage(
+  option: LegalActionOption,
+  snapshot: VaultSnapshot,
+): string {
+  const label = actionLabel(option, snapshot);
+  if (option.actionId === "move-explorer")
+    return `${label}. The move used 1 AP because the two room doors matched.`;
+  if (option.actionId === "search-room")
+    return `${label}. The hidden token was resolved and the board counters updated.`;
+  if (option.actionId === "rotate-adjacent-room")
+    return `${label}. Its doors now face new neighbors.`;
+  if (option.actionId === "play-tactic-card")
+    return `${label}. The once-per-turn card moved to the discard pile.`;
+  return `${label}. The next explorer is now active.`;
+}
+
+function roomName(snapshot: VaultSnapshot, id: string): string {
+  return (
+    snapshot.zones[id]?.label ??
+    id
+      .split("-")
+      .map((part) => part.slice(0, 1).toUpperCase() + part.slice(1))
+      .join(" ")
+  );
+}
+
+function surfaceLabel(surface: ProductSurface): string {
+  return surface === "play"
+    ? "Play"
+    : surface === "rules"
+      ? "Change rules"
+      : "Program";
+}
+
+function journeyIndex(journey: JourneyStage): number {
+  if (journey === "replay") return 0;
+  if (journey === "takeover") return 1;
+  if (journey === "human-done") return 2;
+  if (journey === "ai-done") return 3;
+  if (journey === "rule-done" || journey === "return-to-gate") return 4;
+  return 5;
+}
+
+function optionPrimary(option: LegalActionOption, snapshot: VaultSnapshot) {
+  return {
+    label: actionLabel(option, snapshot),
+    hint:
+      option.actionId === "move-explorer"
+        ? "Matching doors make this move legal"
+        : "Recommended legal action",
+    disabled: false,
+  };
+}
+
+function preferredFreePlayAction(
+  options: LegalActionOption[],
+): LegalActionOption | undefined {
+  return (
+    options.find((option) => option.actionId === "search-room") ??
+    options.find((option) => option.actionId === "move-explorer") ??
+    options.find((option) => option.actionId === "rotate-adjacent-room") ??
+    options.find((option) => option.actionId === "play-tactic-card") ??
+    options.find((option) => option.actionId === "end-turn")
+  );
+}
+
+function replayFocus(step: number): string | null {
+  if (step === 1) return "clockwork-archive";
+  if (step === 2) return "clockwork-archive";
+  if (step === 3) return "echo-hall";
+  return null;
+}
+
+function currentProgramCell(
+  replayStep: number,
+  designerCells: DesignerCandidate[],
+): ProgramDisplayCell {
+  const designer = designerCells.at(-1);
+  if (designer !== undefined)
+    return {
+      label: `Designer rule · ${designer.summary}`,
+      source: designer.source,
+      trace: designer.expected_effects,
+    };
+  const cell =
+    CURATED_REPLAY[
+      Math.max(0, Math.min(2, replayStep === 0 ? 0 : replayStep - 1))
+    ]!;
+  return {
+    label: replayStep === 0 ? `Up next · ${cell.label}` : cell.label,
+    source: cell.source,
+    trace: cell.trace,
+  };
+}
+
+function cardIcon(kind: string | undefined): string {
+  if (kind === "sprint") return "➜";
+  if (kind === "gear") return "⚙";
+  if (kind === "survey") return "◉";
+  return "◇";
+}
+
+function cardEffect(kind: string | undefined): string {
+  if (kind === "sprint") return "Move free";
+  if (kind === "gear") return "Rotate room";
+  if (kind === "survey") return "Reveal token";
+  return "Threat −1";
+}
+
+function legalReason(journey: JourneyStage, snapshot: VaultSnapshot): string {
+  if (journey === "replay")
+    return "The replay uses frozen, already-validated source cells.";
+  if (journey === "human-done")
+    return "Ivo can select only from legal options offered by the runtime.";
+  if (journey === "ai-done")
+    return "The proposed rule must parse, validate, execute, and roll back exactly.";
+  if (journey === "rule-done" || journey === "return-to-gate")
+    return "Mara has AP and the facing doors form a connected route.";
+  if (journey === "triggered")
+    return "The Scenario matched Mara entering a blue gate while its linked room was empty.";
+  return `${seatLabel(snapshot.activeSeatId)} can use only actions currently offered by the game runtime.`;
+}
+
+function changeSummary(
+  journey: JourneyStage,
+  focusId: string | null,
+  snapshot: VaultSnapshot,
+): string {
+  if (journey === "triggered")
+    return "Mirror Gallery rotated 90°; its door connections changed.";
+  if (focusId !== null)
+    return `${roomName(snapshot, focusId)} is highlighted on the table.`;
+  return "No cell has run yet. The next step will update source, trace, and table together.";
 }
 
 function finishSeatTurn(
@@ -957,53 +1623,53 @@ function coachFor(journey: JourneyStage, replayStep: number) {
   switch (journey) {
     case "replay":
       return {
-        kicker: `Guided replay · ${String(replayStep)} / 3`,
+        kicker: `Watch the program run · ${String(replayStep)} / 3`,
         title:
           replayStep === 3
-            ? "Causality proven—take control"
-            : "Advance source, trace, and table together",
+            ? "You saw the program change the table"
+            : "Run one move at a time",
         instruction:
           replayStep === 3
-            ? "The deterministic checkpoint is ready. Take control when you are ready."
-            : "Press Next replay step to apply the highlighted canonical cell.",
+            ? "The checkpoint is ready. Take control of Mara."
+            : "Choose Next step to watch source, trace, and table change together.",
         detail:
           replayStep === 0
-            ? "No AI request runs on load. Each replay step replaces the inspected copy from immutable source."
-            : "The highlighted source, ordered trace, and visible table state describe the same deterministic step.",
+            ? "Each game action is a reversible program cell. The first three are a guided replay."
+            : "The highlighted cell, readable trace, and glowing room are three views of the same action.",
       };
     case "takeover":
       return {
         kicker: "Takeover · Human",
         title: "Move Mara to Azure Gate",
         instruction:
-          "Take control: drag Mara or use the highlighted Move → azure-gate action.",
+          "Take control: use the primary action, or click Mara and then the glowing Azure Gate.",
         detail:
-          "The move is a registered Player cell. The demo then passes cleanly to Ivo.",
+          "Matching doors and Mara's available AP make this move legal. Then Ivo takes a turn.",
       };
     case "human-done":
       return {
         kicker: "Takeover · AI player",
         title: "Let Ivo choose a legal action",
         instruction:
-          "Ask GPT-5.6 Luna for Ivo's move, or use the labelled deterministic fallback.",
+          "Let GPT-5.6 Luna choose from Ivo's legal moves, or use the clearly labelled fallback.",
         detail:
           "Only opaque offered options reach the model; the browser revalidates the choice.",
       };
     case "ai-done":
       return {
         kicker: "Live design",
-        title: "Add the blue-gate rule",
+        title: "Change how Azure Gate works",
         instruction:
-          "Submit the prepared GPT-5.6 Designer request, or use the labelled example rule.",
+          "Create the prepared rule with GPT-5.6, or try the example rule through the same validator.",
         detail:
           "Source must parse, validate, execute speculatively, and roll back exactly before commit.",
       };
     case "rule-done":
       return {
         kicker: "Rule committed · Trigger setup",
-        title: "Leave Azure Gate",
+        title: "Move Mara to Clockwork Archive",
         instruction:
-          "Use the highlighted Move → clockwork-archive action, then re-enter Azure Gate.",
+          "Move Mara to Clockwork Archive so she can enter Azure Gate again.",
         detail:
           "The connected Mirror Gallery is still unoccupied, so the new Scenario can rotate it.",
       };
@@ -1012,7 +1678,7 @@ function coachFor(journey: JourneyStage, replayStep: number) {
         kicker: "Rule committed · Trigger now",
         title: "Re-enter Azure Gate",
         instruction:
-          "Use the highlighted Move → azure-gate action and watch the deterministic cascade.",
+          "Move Mara to Azure Gate and watch the new rule rotate Mirror Gallery.",
         detail:
           "The trace will include entity entry, Scenario match, and linked-room rotation.",
       };

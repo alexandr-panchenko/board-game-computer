@@ -452,3 +452,33 @@ If a feature was cut or is unreliable:
 - remove the claim from README/copy/video;
 - mark the row `CUT` with the exact decision/commit;
 - do not use future-tense language to imply it works now.
+
+## Human-UX correction evidence — 2026-07-21
+
+This pass was opened after the technically green production build failed a
+first-time human comprehension review. It does not finalize M9 and does not
+alter the frozen interpreter, game, AI, room, or deterministic judge semantics.
+
+- Untouched production audit: `docs/16-HUMAN-UX-AUDIT.md`.
+- Before captures: `evidence/local/ux-before-1440x900.png`,
+  `ux-before-1280x800.png`, and `ux-before-pixel7.png` (gitignored).
+- After captures at identical viewports: `evidence/local/ux-after-1440x900.png`,
+  `ux-after-1280x800.png`, and `ux-after-pixel7.png` (gitignored).
+- Internal five-second review: all five specified questions are answered in the
+  first viewport; exact answers and limitations are recorded in the audit.
+- Full local `bun run validate`: format check, zero-warning lint, strict app and
+  Worker TypeScript, 50/50 unit, 14/14 Worker, 42/42 combined desktop/mobile
+  E2E, production build, 112-file-plus-build secret scan, and 27 direct
+  dependency licenses passed.
+- E2E additions cover product statement/objective visibility, exactly one
+  primary journey action, human-readable legal actions without internal slugs,
+  explicit click-piece/click-room movement, collapsed Advanced diagnostics,
+  keyboard focus, fixed mobile product navigation, immediate Designer access,
+  clean-console fallback, and the vault-collapse ending through the UI.
+- Original procedural vector/Graphics primitives only; no third-party or
+  generated art assets were added.
+
+Pending evidence for this correction: committed SHA, CI/deploy run, exact
+production version, same-viewport production captures, live GPT-5.6 repeat, and
+deployed AI-disabled fallback. Record those only after the exact corrected
+commit is verified.
