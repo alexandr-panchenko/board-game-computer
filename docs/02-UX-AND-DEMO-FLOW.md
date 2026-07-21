@@ -1,137 +1,149 @@
 # UX and demo flow — Prism Foundry
 
-Status: binding replacement information architecture; **AWAITING OWNER PRODUCT APPROVAL**.
+Status: binding final hero presentation; **AWAITING OWNER PRODUCT APPROVAL**.
 
-## First viewport
+## Audience and copy hierarchy
 
-Without scrolling, desktop and mobile must communicate:
+The primary user is a tabletop-game enthusiast or designer who wants to play, invent a rule, ask the table to add it, and keep playing. The default interface uses game instructions, user actions, short product explanations, and role-labelled agent conversation. Architecture terminology stays in Program, Advanced, README, and technical documentation.
 
-- product statement: **The board game is the program.**
-- one sentence explaining reversible source cells create every component and move;
-- game title: **Prism Foundry**;
-- objective: **First to 8 Prestige wins.**
-- Mara as active human seat, turn, and both Prestige values;
-- the complete physical tabletop;
-- one gold next action;
-- direct Table, Program, and Change rules navigation.
+The compact product header reads:
 
-The tabletop is the dominant surface. Diagnostics, hashes, capability details, and room internals stay collapsed.
+- `BOARD GAME COMPUTER`
+- `Play the game. Rewrite the rules.`
+- `Collect crystals, build your engine, and ask the table to add a new rule while you play.`
+- secondary badge: `Powered by a live, reversible program`
 
-## Table surface
+The table itself always states:
 
-The table is a single coherent physical projection with:
+- `Prism Foundry`
+- `Be the first player to reach 8 Prestige.`
+- `On your turn: take two different crystals or buy one card.`
 
-- felt/brass perimeter and depth;
-- six original illustrated market cards with readable cost, Prestige, discount color, and ability;
-- seeded deck and spent area;
-- finite faceted token stacks in five distinct colors;
-- Mara and Ivo mats containing their owned physical tokens, permanent discounts, purchased cards, and Prestige;
-- unmistakable active-turn marker;
-- physical Rulebook and House Rules cards;
-- winner overlay when the game ends.
+## Permanent table workspace
 
-Canvas interactions and the HTML accessibility mirror invoke the same registered legal options. Ordinary source IDs never appear in primary copy.
+The physical tabletop is the permanent base surface. At 1440 × 900, the complete table and primary action fit without document scrolling. It contains the six-card market, finite token bank, deck, Mara and Ivo mats, purchased-card tableaus, discounts, Prestige, turn marker, Rulebook, and House Rules.
 
-## Program surface
+The table teaches play contextually:
 
-Program behaves like a notebook/REPL, not marketing documentation or a state inspector.
+- bank: `Take 2 different colors`;
+- market: `Buy 1 affordable card`;
+- player tableau: cards permanently discount their color;
+- turn marker and active-mat treatment identify the current player;
+- House Rules shows the active rule;
+- Rulebook opens the five compact rules.
 
-- Exactly one numbered chronological sequence appears: Cell 1, Cell 2, … Cell N.
-- Cells 1–16 are the actual executable genesis, not a summary.
-- Full creation source is inspectable: table, bank, mats, markers, token catalog, card catalog, market, rules, setup.
-- Action and Designer cells append to the same sequence.
-- Each selected cell exposes its source, human label, trace, forward-mutation count, inverse retention, and before/after hashes.
-- Undo, redo, local prefix inspection, and fork remain available after ordinary play and after victory.
-- The empty next cell/caret makes continuation visible.
+The previous six-cell How to Play grid is absent.
 
-## Change rules surface
+## Direct interaction
 
-The default request is:
+### Take crystals
+
+The player selects one ordinary crystal stack, sees its selected state, selects a second different stack, then confirms the in-table action such as **Take Ruby + Sapphire**. Recommended stacks are highlighted during the hero path. Both physical tokens animate from the bank to Mara's mat.
+
+### Buy cards
+
+Affordable cards glow and expose a Buy affordance. Selecting any card opens an attached contextual panel with its name, printed cost, owned crystals, discounts, final payment, Prestige, ability, and one primary **Buy** button. Unaffordable cards remain inspectable and clearly disabled.
+
+Semantic HTML controls mirror these actions for keyboard users and automation without becoming a competing row of primary buttons.
+
+### Ivo's turn
+
+The physical marker moves to Ivo, Ivo's mat enters a thinking state, and the UI says **Ivo is choosing a move…**. After a short delay, Luna chooses one offered legal move automatically. The result and short reason appear under **Ivo · Player** in Table Agent. If the request fails, deterministic fallback acts truthfully; a visible **Play Ivo's turn** recovery remains available if automatic execution cannot finish.
+
+## `/judge` hero track
+
+Judge mode presents one compact indicator—`Demo · n of 4`—and one dominant next action. It never requires Program before the game is understandable.
+
+1. **Take two crystals** — select highlighted Ruby and Sapphire, confirm, and watch them move.
+2. **Ivo plays** — the active marker and thinking treatment move to Ivo; Luna or labelled fallback acts automatically.
+3. **Change a rule** — Table Agent opens beside the table and submits the prepared Ruby Resonance request.
+4. **Trigger the rule** — House Rules updates, Crimson Relay becomes the highlighted affordable card, and its purchase visibly fires the rule.
+
+After the purchase, an appended-cell confirmation offers **View source**. Program opens at the exact cell. The complete hero story should take 60–75 seconds.
+
+## Ordinary `/` and `/room` play
+
+The ordinary route has no forced judging prose or competition-proof sequence. A small **Guided demo** action can start the coach. The user plays directly on the table, asks Table Agent for changes, inspects Program, or shares naturally.
+
+Before persistence, the header says **Local game** and offers **Create shared room**. It explains that a shared room is needed to invite another player. After creation:
+
+- the route becomes `/room/<roomId>`;
+- Share opens automatically;
+- the header shows short Room ID, connection, and current role;
+- Share offers **Copy player invite**, **Open player view**, and **Copy room reference**;
+- it says to send the Player invite link, not the bare room URL;
+- no raw capability token is displayed.
+
+Player role can play but cannot use Designer authority.
+
+## Table Agent drawer
+
+Table Agent occupies no more than about 35% of desktop width and preserves the table beside it. On mobile it becomes a closeable full-height drawer over the table base.
+
+One chronological conversation contains:
+
+- Ivo's move and reason under `Ivo · Player`;
+- the user's request under `You · Rule request`;
+- Designer progress and committed rule under `Designer · Rules`;
+- truthful failure and fallback messages.
+
+The composer explicitly selects **Change a rule** and retains the prepared request:
 
 > When a player buys a Ruby card, give them one available Prism token.
 
-The surface explains the safety sequence in human language:
+Progress reads **Writing the rule…**, **Checking it…**, and **Adding it to the game…**. Acorn, AST, speculation, rollback, hashes, and capabilities appear only in collapsed **How this was validated** evidence.
 
-1. GPT-5.6 proposes source.
-2. Acorn parses the deliberate subset.
-3. The validator enforces capabilities.
-4. The browser executes speculatively and applies the inverse patch.
-5. Only an exact rollback permits commit.
+## Program drawer
 
-The labelled offline example is visible and truthful. It is never represented as a live GPT response.
+Program is a compact source environment, not a second website or a marketing page.
 
-## Guided judging progression
+- Heading: `Live room program`.
+- Supporting text: `Everything on the table was created by the source below.`
+- One scrollable, syntax-highlighted chronological source surface.
+- Narrow gutter, subtle cell numbers and separators, small author/role indicators, selected-cell highlight, and empty next-cell caret.
+- No grouping by Setup, Rules, or Play.
+- Comments, keywords, declarations, strings, numbers, calls, properties, punctuation, and diagnostics have distinct token styles.
+- Trace, mutation summary, inverse availability, hashes, author, role, and timestamp appear only in the selected-cell inspector, collapsed by default.
+- Undo, redo, and fork remain available after normal play and victory.
 
-The table-level guide has four product-proof stages, not a sample-specific scripted illusion:
+Whenever an action commits, a brief **Cell N added** confirmation offers **View source** and opens the exact cell. Desktop keeps the table beside the drawer; mobile provides an immediate close action back to the table.
 
-1. **Inspect how the table was created** — opens all 16 genesis cells.
-2. **Take control of Mara** — takes Ruby + Sapphire and appends a normal action cell.
-3. **Let Ivo choose a legal action** — Luna or fallback chooses an offered option.
-4. **Rewrite the live game** — opens Change rules, then directs the viewer to buy a Ruby card and trigger the committed rule.
+## Rulebook
 
-After every action, visible status answers:
+The physical Rulebook card opens a compact drawer containing exactly:
 
-- what physical components moved;
-- why the option was legal;
-- which counters/discounts/Prestige changed;
-- whether an ability or House Rule fired;
-- what to do next.
+1. `Reach 8 Prestige first.`
+2. `Take two different crystals OR buy one card.`
+3. `Purchased cards give permanent discounts.`
+4. `Prism tokens can pay for any color.`
+5. `Some cards and House Rules change what happens after a purchase.`
 
-## Full-game learning
+## Mobile behavior
 
-`How to play Prism Foundry` is available from the first screen and does not block the judge path. It explains:
+Mobile is not a vertically stacked desktop page. The table remains the base surface. Compact fixed controls reach Table Agent, Program, Rulebook, and Share. Drawers have visible close/back actions, source scrolls inside its own surface, table gestures do not fight page scrolling, and important touch targets are at least 44 px.
 
-- first to 8 Prestige;
-- one action per turn;
-- take two different ordinary colors;
-- buy from the market;
-- discounts and wild Prism payment;
-- Prism and Echo abilities;
-- turn passing and victory.
+## Responsive and manual acceptance
 
-The current legal controls name useful actions directly. Affordable cards glow on canvas and appear as accessible Buy controls. A user needs no repository documentation to finish.
-
-## Mobile information architecture
-
-Mobile is table-first, not stacked desktop columns.
-
-- Compact product statement, objective, active turn, guide, and the complete scaled table appear in the first viewport.
-- Fixed bottom tabs open Table, Program, and Change rules directly.
-- Legal actions form touch-safe horizontal control rows.
-- Program source scrolls within cells without creating horizontal document overflow.
-- Change rules is a dedicated surface, not content below a long table page.
-- Diagnostics remain collapsed and out of the primary route.
-- Canvas uses tap selection; it does not claim unsupported drag behavior and does not fight page scrolling.
-
-## Responsive targets
-
-Manual visual review and screenshots are required at:
+Capture and inspect:
 
 - 1440 × 900;
 - 1280 × 800;
-- Pixel 7 or equivalent.
+- Pixel 7;
+- table with no rule;
+- table after Ruby Resonance;
+- Table Agent open;
+- Program beside the table;
+- Share with a short Room ID;
+- second-browser Player view.
 
-At each target the viewer must identify the product, goal, next action, AI rule-changing surface, and Mara within five seconds.
-
-## Demo timeline
-
-| Time | Visible proof |
-|---:|---|
-| 0–12 s | Product claim, objective, full physical table, Mara, next action |
-| 12–28 s | Program Cells 1–16 visibly create the whole room |
-| 28–40 s | Mara takes two finite bank tokens; Cell 17 appends |
-| 40–52 s | Luna chooses one legal option or labelled fallback does |
-| 52–72 s | Designer candidate validates, reverses, commits, and appears on House Rules |
-| 72–88 s | Crimson Relay purchase fires Ruby resonance visibly |
-| 88–105 s | Program shows one complete history; inverse and forward patches undo/redo |
-| 105–120 s | Share/reconnect/fork evidence and continued path to 8 Prestige |
+At 1440 × 900 a new viewer gets five seconds to answer: what game this is, its objective, which mat is theirs, whose turn it is, what they can do now, where to request a rule, where to inspect Program, and how to invite another player. Failure blocks release even if automation is green.
 
 ## Accessibility and honesty
 
 - Keyboard focus has a visible 3 px outline.
 - Interactive targets are at least 40 px desktop and 44 px mobile.
-- A single live status announcement follows actions across surfaces.
-- Canvas has a meaningful accessibility label; HTML mirrors legal actions without becoming canonical state.
-- Color is reinforced by names, card text, token geometry, player names, and mat labels.
-- No internal slug appears in primary legal-action copy.
-- No automated pass is presented as proof that a human understands the interface.
+- Live announcements describe committed actions.
+- Canvas has a meaningful label and semantic controls share the same legal-action path.
+- Color is reinforced by names, text, geometry, and mat labels.
+- Internal IDs do not appear in primary action copy.
+- Model fallback is labelled and never represented as a live response.

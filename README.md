@@ -1,8 +1,8 @@
 # Board Game Computer
 
-**The board game is the program.**
+**Play the game. Rewrite the rules.**
 
-Board Game Computer is a live shared tabletop where people and GPT-5.6 create, play, and change a game through the same reversible JavaScript-shaped command language. The production sample is **Prism Foundry**, an original two-player crystal-and-card engine builder. Every visible card, token, rule, setup step, and move comes from the room's interpreted source cells.
+Collect crystals, build your engine, and ask the table to add a new rule while you play. The production sample is **Prism Foundry**, an original two-player crystal-and-card engine builder powered by a live, reversible program.
 
 Release state: **AWAITING OWNER PRODUCT APPROVAL**. M9 is intentionally not final and no submission tag has been created.
 
@@ -14,15 +14,16 @@ Release state: **AWAITING OWNER PRODUCT APPROVAL**. M9 is intentionally not fina
 
 No login or user-provided API key is required. OpenAI calls are server-side. The deterministic fallback keeps the complete game playable when AI is disabled.
 
-## Five-minute product path
+## 60–75 second hero path
 
-1. Open `/judge`. Read the objective: first to 8 Prestige.
-2. Choose **Open the complete program**. Cells 1–16 show the actual creation of the table, bank, mats, finite tokens, original card catalog, market, actions, payment, abilities, turns, victory, and setup.
-3. Return to **Table** and choose **Take Ruby + Sapphire**. Both physical tokens move from the bank to Mara and Cell 17 joins the same Program.
-4. Choose **Let Ivo move**. GPT-5.6 Luna selects one offered legal option; if unavailable, the deterministic fallback selects from that same list.
-5. Choose **Open Change rules**. Ask GPT-5.6 Designer for the displayed Ruby resonance rule or use the clearly labelled offline example. Candidate source is parsed, validated, speculatively executed, and reversed before commit.
-6. Buy **Crimson Relay**. Payment returns to the bank, the card moves to Mara's tableau, Prestige and the Ruby discount increase, the market refills, and the new House Rule moves one Prism token to Mara.
-7. Continue playing to 8 Prestige, or inspect, undo, redo, replay, share, and fork the chronological program.
+1. Open `/judge`. The full table explains the goal and Mara's turn.
+2. Select the highlighted Ruby and Sapphire stacks, then choose **Take Ruby + Sapphire**. Both tokens visibly move to Mara.
+3. Ivo's mat enters a thinking state and GPT-5.6 Luna automatically chooses one legal move. A clearly labelled deterministic fallback keeps play moving if the request is unavailable.
+4. Choose **Change a rule**. The compact Table Agent opens beside the table. Ask GPT-5.6 Designer for the prepared Ruby Resonance rule.
+5. Close the drawer, inspect highlighted **Crimson Relay**, and choose **Buy**. Payment, card movement, discount, Prestige, market refill, and the rule-granted Prism animate on the table.
+6. Choose **View source** to open Program beside the table at the exact appended cell. Continue playing to 8 Prestige, or inspect, undo, redo, share, and fork the room.
+
+The bare `/` and `/judge` routes are local games. Choose **Create shared room** to get a persistent `/room/<roomId>` route and a separate Player invite link.
 
 ## Prism Foundry rules
 

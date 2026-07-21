@@ -196,7 +196,7 @@ export class PixiTableRenderer implements TableRenderer {
 
   private market(snapshot: FoundrySnapshot): Container {
     const layer = new Container();
-    layer.addChild(label("FACE-UP MARKET · BUY ONE CARD", 310, 31));
+    layer.addChild(label("FACE-UP MARKET · BUY 1 AFFORDABLE CARD", 310, 31));
     snapshot.market.forEach((cardId, index) => {
       const card = snapshot.cards.find((item) => item.id === cardId);
       if (card === undefined) return;
@@ -218,9 +218,11 @@ export class PixiTableRenderer implements TableRenderer {
     legal: boolean,
   ): Container {
     const layer = new Container({ x, y });
-    layer.eventMode = legal ? "static" : "none";
-    layer.cursor = legal ? "pointer" : "default";
-    if (legal) layer.on("pointertap", () => this.onBuyCard?.(card.id));
+    layer.eventMode = legal && this.onBuyCard !== undefined ? "static" : "none";
+    layer.cursor =
+      legal && this.onBuyCard !== undefined ? "pointer" : "default";
+    if (legal && this.onBuyCard !== undefined)
+      layer.on("pointertap", () => this.onBuyCard?.(card.id));
     const color = palette[card.discountColor];
     layer.addChild(
       new Graphics()
@@ -238,7 +240,7 @@ export class PixiTableRenderer implements TableRenderer {
         text: card.name,
         style: {
           fill: 0x172123,
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: "800",
           wordWrap: true,
           wordWrapWidth: 105,
@@ -248,13 +250,13 @@ export class PixiTableRenderer implements TableRenderer {
       }),
       new Text({
         text: `${String(card.prestige)} PRESTIGE`,
-        style: { fill: 0x734b16, fontSize: 10, fontWeight: "800" },
+        style: { fill: 0x734b16, fontSize: 11, fontWeight: "800" },
         x: 10,
         y: 112,
       }),
       new Text({
         text: costText(card),
-        style: { fill: 0x263536, fontSize: 9, fontWeight: "700" },
+        style: { fill: 0x263536, fontSize: 10, fontWeight: "800" },
         x: 10,
         y: 131,
       }),
@@ -265,7 +267,7 @@ export class PixiTableRenderer implements TableRenderer {
             : `Permanent ${title(card.discountColor)} discount`,
         style: {
           fill: 0x435052,
-          fontSize: 8,
+          fontSize: 9,
           wordWrap: true,
           wordWrapWidth: 105,
         },
@@ -335,7 +337,7 @@ export class PixiTableRenderer implements TableRenderer {
       );
     layer.addChild(
       new Text({
-        text: "SEEDED\nDECK",
+        text: "CARD\nDECK",
         style: {
           fill: 0xe9dcff,
           fontSize: 16,
@@ -365,7 +367,7 @@ export class PixiTableRenderer implements TableRenderer {
         .roundRect(205, 266, 710, 170, 22)
         .fill({ color: 0x102329, alpha: 0.96 })
         .stroke({ color: 0x6ea698, width: 2 }),
-      label("CENTRAL CRYSTAL BANK · SELECT TWO DIFFERENT COLORS", 233, 280),
+      label("CENTRAL CRYSTAL BANK · TAKE 2 DIFFERENT COLORS", 233, 280),
     );
     const positions: Array<[CrystalColor, number]> = [
       ["ruby", 282],
@@ -395,9 +397,11 @@ export class PixiTableRenderer implements TableRenderer {
           Object.values(option.parameters).includes(color),
       );
     const selected = this.selectedColor === color;
-    layer.eventMode = legal ? "static" : "none";
-    layer.cursor = legal ? "pointer" : "default";
-    if (legal && isOrdinary)
+    layer.eventMode =
+      legal && this.onTakePair !== undefined ? "static" : "none";
+    layer.cursor =
+      legal && this.onTakePair !== undefined ? "pointer" : "default";
+    if (legal && isOrdinary && this.onTakePair !== undefined)
       layer.on("pointertap", () => this.selectCrystal(color, snapshot));
     layer.addChild(
       new Graphics()
@@ -486,7 +490,7 @@ export class PixiTableRenderer implements TableRenderer {
       new Graphics()
         .roundRect(0, 0, width, 205, 22)
         .fill({ color: 0x10252a })
-        .stroke({ color: active ? 0xffe28a : accent, width: active ? 5 : 2 }),
+        .stroke({ color: active ? 0xffe28a : accent, width: active ? 7 : 2 }),
       new Text({
         text: `${player.name.toUpperCase()}'S FOUNDRY`,
         style: {
@@ -504,7 +508,13 @@ export class PixiTableRenderer implements TableRenderer {
         x: width - 150,
         y: 12,
       }),
-      label(active ? "TURN MARKER" : "WAITING", 19, 44),
+      label(
+        active
+          ? `${player.name.toUpperCase()}'S TURN · TURN MARKER`
+          : "WAITING",
+        19,
+        44,
+      ),
     );
     const tokenCounts = ([...ordinaryColors, "prism"] as CrystalColor[]).map(
       (color) =>

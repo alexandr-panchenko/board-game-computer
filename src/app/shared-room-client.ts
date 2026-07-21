@@ -113,6 +113,10 @@ export function accessFromLocation(): RoomAccess | null {
   return null;
 }
 
+export function playerInviteFromStorage(roomId: string): string | undefined {
+  return sessionStorage.getItem(playerInviteKey(roomId)) ?? undefined;
+}
+
 export function accessFromCreation(creation: RoomCreation): RoomAccess {
   const url = new URL(creation.designerUrl);
   const capability = new URLSearchParams(url.hash.slice(1)).get("designer");
@@ -121,6 +125,7 @@ export function accessFromCreation(creation: RoomCreation): RoomAccess {
     capabilityKey(creation.roomId),
     JSON.stringify({ role: "designer", capability }),
   );
+  sessionStorage.setItem(playerInviteKey(creation.roomId), creation.playerUrl);
   history.replaceState(null, "", `/room/${creation.roomId}`);
   return { roomId: creation.roomId, role: "designer", capability };
 }
@@ -525,6 +530,10 @@ export class SharedRoomClient {
 
 function capabilityKey(roomId: string): string {
   return `board-game-computer:room:${roomId}`;
+}
+
+function playerInviteKey(roomId: string): string {
+  return `board-game-computer:player-invite:${roomId}`;
 }
 
 function clientId(): string {

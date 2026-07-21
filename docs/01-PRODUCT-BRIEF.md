@@ -2,11 +2,13 @@
 
 Status: replacement product implemented; **AWAITING OWNER PRODUCT APPROVAL**.
 
-## Product statement
+## Primary product statement
 
-**The board game is the program.**
+**Play the game. Rewrite the rules.**
 
-Board Game Computer is a live shared tabletop where people and GPT-5.6 create, play, and change a complete game through the same reversible JavaScript-shaped room program.
+Collect crystals, build your engine, and ask the table to add a new rule while you play.
+
+The primary audience is a tabletop-game enthusiast or designer. The first screen speaks about playing, inventing rules, and seeing them change the live table. **Powered by a live, reversible program** is a secondary proof; interpreter and distributed-systems language belongs in Program, Advanced, and technical documentation.
 
 ## Product proof
 
@@ -28,28 +30,28 @@ Primary audience: hackathon judges, technical creators, tabletop designers, and 
 
 Within five seconds a viewer must be able to answer:
 
-1. This is a board game created by its program.
-2. Prism Foundry's goal is first to 8 Prestige.
-3. Mara is the human seat and the gold control is the next action.
-4. Change rules is a first-level product surface.
-5. Program contains the complete executable game and history.
+1. This is Prism Foundry, a board game whose rules can change during play.
+2. The goal is to reach 8 Prestige first.
+3. Mara is the human seat, it is clear whose turn it is, and the highlighted table control is the next action.
+4. **Change a rule** reaches the Table Agent.
+5. **Program** inspects the live room source when the viewer wants technical proof.
 
 ## Primary experience
 
-1. Inspect the actual genesis program.
-2. Take control of Mara through a registered legal option.
-3. Let GPT-5.6 Luna choose for Ivo from legal options only.
-4. Ask GPT-5.6 Designer to add Ruby resonance.
-5. Watch local parse, validation, speculation, exact rollback, and commit.
-6. Buy a Ruby card and watch the new rule move a physical Prism token.
-7. Continue to a real 8-Prestige ending.
-8. Undo, redo, replay-inspect, share, reconnect, rebase, and fork through patches and ordered cells.
+1. Select two highlighted crystals directly on the table and take them for Mara.
+2. Watch Ivo visibly think, then let GPT-5.6 Luna choose from legal options only.
+3. Ask GPT-5.6 Designer to add Ruby Resonance in the compact Table Agent.
+4. See the House Rule become a physical part of the table.
+5. Buy a Ruby card and watch payment, card movement, discounts, Prestige, refill, and the new Prism animate.
+6. Optionally open Program at the exact appended cell and inspect the continuous room source.
+7. Continue to a real 8-Prestige ending, or use history, sharing, reconnect, rebase, and fork.
 
 ## Required product surfaces
 
-- **Table** — the dominant physical product: bank, market, deck, mats, tokens, cards, markers, Rulebook, House Rules, victory.
-- **Program** — exactly one uninterrupted chronological notebook/REPL sequence with all genesis, action, and Designer cells; source is not curated away.
-- **Change rules** — Designer request, safety process, live action, and labelled deterministic fallback.
+- **Table** — the permanent physical base: bank, market, deck, mats, tokens, cards, markers, Rulebook, House Rules, victory, and direct interaction.
+- **Table Agent** — one chronological conversation with visibly distinct **Ivo · Player**, **Designer · Rules**, and user rule-request roles.
+- **Program drawer** — one uninterrupted chronological notebook/REPL sequence with all setup, action, and Designer cells; the table remains visible beside it.
+- **Share drawer** — discoverable persistent-room creation, short Room ID, role, connection, and Player invite.
 - **Advanced diagnostics** — hashes, room details, and developer evidence collapsed by default.
 
 ## Technical invariants

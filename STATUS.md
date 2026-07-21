@@ -13,7 +13,7 @@ Last design review: **2026-07-21**
 | M6 — Complete hero/judge flow | complete | Local validation, CI, exact production version, live AI path, and deployed desktop/mobile checks passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve the literal judge path while adding persistence | `405fe3a` |
 | M7 — Persistent shared rooms and rebase | complete | Local validation, CI, exact production version, two-browser convergence/reload/fork passed 2026-07-21 | None known beyond the existing bundle warning | Preserve ordering and capability boundaries during hardening | `d9ebcda` |
 | M8 — Reliability, mobile, security, and production verification | complete | Local/CI validation, apex exact-version smoke, 36-check production E2E, M7 rollback/M8 restore, and propagation-aware deploy passed 2026-07-21 | Known non-blocking Pixi chunk warning | Preserve the verified release while freezing evidence | `51dc131`, production gate `b1a270d` |
-| M9 — Evidence and release freeze | in progress | Prism Foundry local matrix, CI run `29843801799`, deploy job `88680538721`, exact production smoke, 12-check production E2E, live GPT-5.6, and forced-offline paths passed 2026-07-21 | Replacement is technically verified but not owner-approved; non-blocking Pixi chunk warning remains | Await explicit owner product review; do not tag or request owner-only artifacts | Replacement `bac433f`; reset record `b515361`; rejected baseline `6fe6e43` |
+| M9 — Evidence and release freeze | in progress | Hero-polish local matrix passed 2026-07-21: 43 unit, 14 Worker, 21 desktop/mobile E2E with 3 intentional project skips, build, secret, and license checks | Clean-clone, CI, deployment, live production, fallback, and shared-room verification remain; non-blocking Pixi chunk warning remains | Commit and push the focused hero polish, verify the immutable SHA, then await explicit owner product review; do not tag | Hero baseline `c413530`; reset record `b515361`; rejected baseline `6fe6e43` |
 
 ## Current gate
 
@@ -31,6 +31,12 @@ Durable Object ordering, reconnect/rebase/fork, deployment, security, and CI
 remain preserved. No owner-only submission artifact is part of this task. The
 release stays **AWAITING OWNER PRODUCT APPROVAL** after implementation and
 deployment until the owner explicitly accepts the replacement.
+
+Prism Foundry and the room-as-program architecture are now the accepted
+foundation. `docs/18-HERO-POLISH-AUDIT.md` records the active final hero-track,
+copy, interaction, Program, Table Agent, sharing, and visual-polish pass. This
+work does not reopen the product architecture and does not change the release
+gate.
 
 ## Cut line
 

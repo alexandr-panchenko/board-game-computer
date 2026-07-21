@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { LegalActionOption } from "../runtime";
 import { TableCanvas } from "../render/TableCanvas";
+import type { LegalActionOption } from "../runtime";
 import {
   PrismFoundryRoom,
   RUBY_RESONANCE_SOURCE,
@@ -19,69 +19,112 @@ import {
   accessFromCreation,
   accessFromLocation,
   createSharedRoom,
+  playerInviteFromStorage,
   type SharedRoomView,
 } from "./shared-room-client";
+import { highlightSource } from "./source-highlight";
 
-type Surface = "table" | "program" | "rules";
+type Panel = "agent" | "program" | "share" | "rulebook" | "advanced";
+type AgentRole = "ivo" | "designer" | "you";
+
+interface AgentMessage {
+  id: number;
+  role: AgentRole;
+  text: string;
+}
+
+interface CellToast {
+  number: number;
+  label: string;
+}
 
 export function App() {
   const [initialGame] = useState(() => new PrismFoundryRoom());
   const gameRef = useRef(initialGame);
   const sharedRef = useRef<SharedRoomClient | null>(null);
   const designerAbort = useRef<AbortController | null>(null);
+  const autoIvoKey = useRef<string | null>(null);
+  const messageId = useRef(1);
   const [snapshot, setSnapshot] = useState(() => initialGame.snapshot());
   const [program, setProgram] = useState(() => initialGame.program());
-  const [surface, setSurface] = useState<Surface>("table");
-  const [mobileNav, setMobileNav] = useState(
-    () => window.matchMedia("(max-width: 640px)").matches,
+  const [panel, setPanel] = useState<Panel | null>(null);
+  const [guidedDemo, setGuidedDemo] = useState(
+    () => window.location.pathname === "/judge",
   );
-  const [programSeen, setProgramSeen] = useState(false);
   const [selectedCell, setSelectedCell] = useState(16);
-  const [message, setMessage] = useState(
-    "The room program built this table. Mara may take two different crystals or buy an affordable card.",
+  const [changedIds, setChangedIds] = useState<string[]>([]);
+  const [announcement, setAnnouncement] = useState(
+    "Mara's turn. Take two different crystals or buy one affordable card.",
   );
+  const [cellToast, setCellToast] = useState<CellToast | null>(null);
   const [designerPrompt, setDesignerPrompt] = useState(
     "When a player buys a Ruby card, give them one available Prism token.",
   );
   const [designerBusy, setDesignerBusy] = useState(false);
+  const [designerProgress, setDesignerProgress] = useState<string | null>(null);
   const [playerBusy, setPlayerBusy] = useState(false);
+  const [ivoNeedsRetry, setIvoNeedsRetry] = useState(false);
+  const [creatingRoom, setCreatingRoom] = useState(false);
   const [shared, setShared] = useState<SharedRoomView | null>(null);
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-
-  const refresh = useCallback(
-    (nextMessage?: string, nextSnapshot?: FoundrySnapshot) => {
-      setSnapshot(nextSnapshot ?? gameRef.current.snapshot());
-      const nextProgram = gameRef.current.program();
-      setProgram(nextProgram);
-      setSelectedCell(nextProgram.cursor);
-      if (nextMessage !== undefined) setMessage(nextMessage);
+  const [roomStatus, setRoomStatus] = useState("Local game");
+  const [agentMessages, setAgentMessages] = useState<AgentMessage[]>([
+    {
+      id: 1,
+      role: "designer",
+      text: "I can add a House Rule while you play.",
     },
-    [],
-  );
+  ]);
 
-  useEffect(() => {
-    const query = window.matchMedia("(max-width: 640px)");
-    const update = () => setMobileNav(query.matches);
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
+  const addAgentMessage = useCallback((role: AgentRole, text: string) => {
+    messageId.current += 1;
+    const id = messageId.current;
+    setAgentMessages((messages) => [...messages, { id, role, text }]);
   }, []);
 
-  useEffect(() => {
-    if (mobileNav) window.scrollTo(0, 0);
-  }, [mobileNav, surface]);
+  const announce = useCallback((text: string) => setAnnouncement(text), []);
+
+  const refresh = useCallback(
+    (nextAnnouncement?: string, nextSnapshot?: FoundrySnapshot) => {
+      const next = nextSnapshot ?? gameRef.current.snapshot();
+      const nextProgram = gameRef.current.program();
+      setSnapshot(next);
+      setProgram(nextProgram);
+      setSelectedCell(nextProgram.cursor);
+      if (nextAnnouncement !== undefined) announce(nextAnnouncement);
+    },
+    [announce],
+  );
+
+  const recordLatestCell = useCallback(() => {
+    const nextProgram = gameRef.current.program();
+    const cell = nextProgram.cells[nextProgram.cursor - 1];
+    if (cell === undefined) return;
+    setProgram(nextProgram);
+    setSelectedCell(cell.number);
+    setChangedIds(changedObjectIds(cell));
+    setCellToast({ number: cell.number, label: cell.label });
+  }, []);
 
   useEffect(() => {
     const access = accessFromLocation();
     if (access === null) return;
-    const client = new SharedRoomClient(access, (room, view, update) => {
-      gameRef.current = room;
-      setShared(view);
-      setSnapshot(room.snapshot());
-      const nextProgram = room.program();
-      setProgram(nextProgram);
-      setSelectedCell(16 + view.timelineCursor);
-      setMessage(update);
-    });
+    const storedPlayerInvite =
+      access.role === "designer"
+        ? playerInviteFromStorage(access.roomId)
+        : undefined;
+    const client = new SharedRoomClient(
+      access,
+      (room, view, update) => {
+        gameRef.current = room;
+        setShared(view);
+        setSnapshot(room.snapshot());
+        const nextProgram = room.program();
+        setProgram(nextProgram);
+        setSelectedCell(16 + view.timelineCursor);
+        setRoomStatus(update);
+      },
+      storedPlayerInvite === undefined ? {} : { playerUrl: storedPlayerInvite },
+    );
     sharedRef.current = client;
     setShared(client.view());
     return () => {
@@ -91,7 +134,7 @@ export function App() {
   }, []);
 
   const commitAction = useCallback(
-    (option: LegalActionOption, source: "human" | "ai" = "human") => {
+    (option: LegalActionOption, actor: "human" | "ai" = "human") => {
       const before = gameRef.current.snapshot();
       const label = actionLabel(option, before);
       const accepted =
@@ -99,19 +142,25 @@ export function App() {
           ? gameRef.current.perform(option).ok
           : sharedRef.current.proposeAction(option);
       if (!accepted) {
-        setMessage(
-          "That action is no longer legal. The table was not changed.",
-        );
+        announce("That move is no longer available. Nothing changed.");
         return false;
       }
       const after = gameRef.current.snapshot();
+      const change = describeActionChange(option, before, after);
+      const resonanceFired =
+        option.actionId === "buy-card" &&
+        before.houseRules.length > 0 &&
+        after.bank.prism < before.bank.prism;
       refresh(
-        `${source === "ai" ? "Ivo" : "Mara"} committed “${label}.” ${describeActionChange(option, before, after)} It was legal because it came from the active player's registered options; forward and inverse patches were recorded. Next: ${after.result !== null ? "inspect the completed program or undo" : after.activePlayerId === "ai" ? "let Ivo choose" : after.houseRules.length === 0 && after.turnNumber > 1 ? "change the rules" : "choose Mara's next action"}.`,
+        resonanceFired
+          ? `The new rule fired! ${change}`
+          : `${actor === "ai" ? "Ivo" : "Mara"}: ${label}. ${change}`,
         after,
       );
+      recordLatestCell();
       return true;
     },
-    [refresh],
+    [announce, recordLatestCell, refresh],
   );
 
   const takePair = useCallback(
@@ -142,9 +191,11 @@ export function App() {
     const options = gameRef.current.legalActions("ai");
     if (options.length === 0) return;
     setPlayerBusy(true);
-    setMessage("GPT-5.6 Luna is choosing from Ivo's validated legal options…");
+    setIvoNeedsRetry(false);
+    announce("Ivo is choosing a move…");
     let option = gameRef.current.chooseFallbackAction("ai");
     let reason: string;
+    let fallback = false;
     try {
       const response = await requestPlayerChoice({
         roomId: shared?.roomId ?? "local-prism-foundry",
@@ -160,56 +211,102 @@ export function App() {
         options.find(
           (candidate) => candidate.id === response.choice.option_id,
         ) ?? option;
-      reason = `GPT-5.6 Luna chose from legal options: ${response.choice.reason}`;
+      reason = response.choice.reason;
     } catch {
+      fallback = true;
       reason =
-        "OpenAI was unavailable, so the deterministic legal fallback kept the game playable.";
+        "The Table Agent was offline, so I used the deterministic fallback.";
     }
-    commitAction(option, "ai");
-    setMessage(
-      `${reason} ${actionLabel(option, current)} was committed as the next program cell.`,
-    );
+    const label = actionLabel(option, current);
+    const committed = commitAction(option, "ai");
+    if (committed) {
+      addAgentMessage(
+        "ivo",
+        `${label}. ${reason}${fallback ? " Play stays fully available." : ""}`,
+      );
+      announce(`${label}. Ivo has finished; Mara is up next.`);
+    } else {
+      setIvoNeedsRetry(true);
+      announce("Ivo couldn't finish that move. Try his turn again.");
+    }
     setPlayerBusy(false);
-  }, [commitAction, shared]);
+  }, [addAgentMessage, announce, commitAction, shared]);
+
+  const rubyPurchasedByMara = snapshot.cards.some(
+    (card) => card.id === "crimson-relay" && card.ownerId === "human",
+  );
+
+  useEffect(() => {
+    const canDriveIvo = shared === null || shared.role === "designer";
+    if (
+      !canDriveIvo ||
+      snapshot.activePlayerId !== "ai" ||
+      snapshot.result !== null ||
+      playerBusy ||
+      (guidedDemo && rubyPurchasedByMara)
+    )
+      return;
+    const key = `${snapshot.turnNumber}:${snapshot.stateHash}`;
+    if (autoIvoKey.current === key) return;
+    const timer = window.setTimeout(() => {
+      autoIvoKey.current = key;
+      void runIvo();
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [
+    guidedDemo,
+    playerBusy,
+    rubyPurchasedByMara,
+    runIvo,
+    shared,
+    snapshot.activePlayerId,
+    snapshot.result,
+    snapshot.stateHash,
+    snapshot.turnNumber,
+  ]);
 
   const commitRule = useCallback(
-    (candidate: DesignerCandidate, origin: string) => {
+    (candidate: DesignerCandidate, offline: boolean) => {
+      setDesignerProgress("Adding it to the game…");
       const accepted =
         sharedRef.current === null
           ? gameRef.current.commitDesigner(candidate.source).ok
           : sharedRef.current.proposeDesigner(candidate.source);
       if (!accepted) return false;
       refresh(
-        `${origin} produced a valid reversible cell. “${candidate.summary}” is now Cell ${String(gameRef.current.program().cursor)} and appears on the physical House Rules card.`,
+        "Ruby Resonance is now a physical House Rule. Buy a Ruby card to try it.",
       );
-      setSurface("table");
+      recordLatestCell();
+      addAgentMessage(
+        "designer",
+        `${offline ? "Offline example: " : ""}Ruby Resonance is now part of this game. Buy a Ruby card and the player gains an available Prism.`,
+      );
       return true;
     },
-    [refresh],
+    [addAgentMessage, recordLatestCell, refresh],
   );
 
   const useExampleRule = useCallback(() => {
+    addAgentMessage("you", designerPrompt);
     commitRule(
       {
         source: RUBY_RESONANCE_SOURCE,
-        summary: "Ruby resonance: buying a Ruby card gains one available Prism",
-        expected_effects: [
-          "House Rules gains Ruby resonance",
-          "Ruby purchases gain Prism",
-        ],
+        summary: "Ruby resonance",
+        expected_effects: ["Ruby purchases gain Prism"],
       },
-      "The labelled offline example",
+      true,
     );
-  }, [commitRule]);
+  }, [addAgentMessage, commitRule, designerPrompt]);
 
   const askDesigner = useCallback(async () => {
-    if (designerBusy) return;
+    if (designerBusy || shared?.role === "player") return;
     setDesignerBusy(true);
+    setDesignerProgress("Writing the rule…");
+    addAgentMessage("you", designerPrompt);
     const controller = new AbortController();
     designerAbort.current = controller;
-    setMessage("GPT-5.6 Designer is proposing source for local validation…");
     try {
-      const program = gameRef.current.program();
+      const currentProgram = gameRef.current.program();
       const result = await runDesignerRepairLoop({
         baseHash: snapshot.stateHash,
         currentHash: () => gameRef.current.snapshot().stateHash,
@@ -218,9 +315,9 @@ export function App() {
             {
               roomId: shared?.roomId ?? "local-prism-foundry",
               request: designerPrompt,
-              baseSeq: program.cursor,
+              baseSeq: currentProgram.cursor,
               baseHash: snapshot.stateHash,
-              sourceCells: program.cells.map((cell) => ({
+              sourceCells: currentProgram.cells.map((cell) => ({
                 id: cell.id,
                 kind:
                   cell.kind === "genesis"
@@ -236,22 +333,21 @@ export function App() {
               attempt,
               diagnostics,
             },
-            (event) => {
-              if (event.type === "progress")
-                setMessage(`GPT-5.6 Designer · ${event.stage}…`);
-            },
+            () => setDesignerProgress("Writing the rule…"),
             controller.signal,
           ),
-        validate: (source) => gameRef.current.speculateDesigner(source),
+        validate: (source) => {
+          setDesignerProgress("Checking it…");
+          return gameRef.current.speculateDesigner(source);
+        },
         commit: (source) =>
           commitRule(
             {
               source,
-              summary:
-                "Ruby resonance: buying a Ruby card gains one available Prism",
+              summary: "Ruby resonance",
               expected_effects: ["Ruby purchases gain Prism"],
             },
-            "GPT-5.6 Designer",
+            false,
           )
             ? { ok: true }
             : {
@@ -259,28 +355,40 @@ export function App() {
                 diagnostic: {
                   code: "TS_COMMIT_FAILED",
                   phase: "conflict",
-                  message: "The validated Designer cell could not commit.",
+                  message: "The checked rule could not be added.",
                 },
               },
       });
       if (!result.ok) {
-        setMessage(
+        const text =
           result.error === undefined
-            ? "The Designer candidate did not pass local validation. Nothing was committed; the labelled offline example remains available."
-            : "OpenAI is unavailable. Nothing was committed; use the labelled offline example.",
-        );
+            ? "I couldn't safely add that rule. Nothing changed; the offline example is ready."
+            : "I couldn't reach the Designer. Nothing changed; the offline example is ready.";
+        announce(text);
+        addAgentMessage("designer", text);
       }
     } catch (error) {
-      setMessage(
+      const text =
         error instanceof DOMException && error.name === "AbortError"
-          ? "Designer request cancelled. Nothing was committed."
-          : "OpenAI is unavailable. Nothing was committed; use the labelled offline example.",
-      );
+          ? "Rule request cancelled. Nothing changed."
+          : "I couldn't reach the Designer. Nothing changed; the offline example is ready.";
+      announce(text);
+      addAgentMessage("designer", text);
     } finally {
       designerAbort.current = null;
+      setDesignerProgress(null);
       setDesignerBusy(false);
     }
-  }, [commitRule, designerBusy, designerPrompt, shared?.roomId, snapshot]);
+  }, [
+    addAgentMessage,
+    announce,
+    commitRule,
+    designerBusy,
+    designerPrompt,
+    shared?.role,
+    shared?.roomId,
+    snapshot,
+  ]);
 
   const reset = useCallback(() => {
     sharedRef.current?.destroy();
@@ -288,19 +396,29 @@ export function App() {
     history.replaceState(
       null,
       "",
-      location.pathname === "/judge" ? "/judge" : "/",
+      window.location.pathname === "/judge" ? "/judge" : "/",
     );
     gameRef.current = new PrismFoundryRoom();
     setShared(null);
-    setProgramSeen(false);
-    setSurface("table");
-    refresh(
-      "Fresh room: the 16-cell genesis program rebuilt Prism Foundry from an empty runtime.",
-    );
+    setPanel(null);
+    setCellToast(null);
+    setChangedIds([]);
+    setAgentMessages([
+      {
+        id: 1,
+        role: "designer",
+        text: "I can add a House Rule while you play.",
+      },
+    ]);
+    messageId.current = 1;
+    autoIvoKey.current = null;
+    refresh("Fresh game. Mara takes the first turn.");
   }, [refresh]);
 
   const createRoom = useCallback(async () => {
-    setMessage("Creating a persistent Durable Object room…");
+    if (creatingRoom) return;
+    setCreatingRoom(true);
+    announce("Creating your shared room…");
     try {
       const creation = await createSharedRoom(snapshot.stateHash);
       const access = accessFromCreation(creation);
@@ -313,35 +431,45 @@ export function App() {
           const nextProgram = room.program();
           setProgram(nextProgram);
           setSelectedCell(16 + view.timelineCursor);
-          setMessage(update);
+          setRoomStatus(update);
         },
         { playerUrl: creation.playerUrl },
       );
       sharedRef.current = client;
       setShared(client.view());
-    } catch {
-      setMessage(
-        "The persistent room could not be created. The local table remains fully playable.",
+      setGuidedDemo(false);
+      setPanel("share");
+      announce(
+        "Shared room created. Send the Player invite link to your guest.",
       );
+    } catch {
+      announce(
+        "The shared room could not be created. This local game is still playable.",
+      );
+    } finally {
+      setCreatingRoom(false);
     }
-  }, [snapshot.stateHash]);
+  }, [announce, creatingRoom, snapshot.stateHash]);
 
-  const selected = program.cells[selectedCell - 1];
+  const openProgram = useCallback((cell = gameRef.current.program().cursor) => {
+    setSelectedCell(cell);
+    setPanel("program");
+    setCellToast(null);
+  }, []);
+
+  const cursor = shared === null ? program.cursor : 16 + shared.timelineCursor;
+  const guide = heroGuide(snapshot, rubyPurchasedByMara);
   const humanOptions = snapshot.legalActions.filter(
     (option) => option.actorId === "human",
   );
-  const changedIds =
-    selected?.forward.mutations.flatMap((mutation) => {
-      if (mutation.kind === "property.set" || mutation.kind === "array.set")
-        return [mutation.objectId];
-      if (mutation.kind === "binding.set") return [mutation.name];
-      return [];
-    }) ?? [];
-  const guide = guideState(snapshot, programSeen);
-  const selectSurface = useCallback((next: Surface) => {
-    if (next === "program") setProgramSeen(true);
-    setSurface(next);
-  }, []);
+  const recommendedColors =
+    guidedDemo && guide.step === 1
+      ? (["ruby", "sapphire"] as OrdinaryCrystalColor[])
+      : [];
+  const recommendedCardId =
+    guidedDemo && guide.step === 4 && !rubyPurchasedByMara
+      ? "crimson-relay"
+      : undefined;
 
   return (
     <main className="app-shell">
@@ -351,430 +479,460 @@ export function App() {
           <span>Board Game Computer</span>
         </a>
         <div className="header-copy">
-          <p className="eyebrow">A live tabletop created by its own program</p>
-          <h1>The board game is the program.</h1>
+          <p className="eyebrow">Board Game Computer</p>
+          <h1>Play the game. Rewrite the rules.</h1>
           <p>
-            Every card, token, rule, and move below was created by reversible
-            source cells that people and GPT-5.6 can inspect and extend
-            together.
+            Collect crystals, build your engine, and ask the table to add a new
+            rule while you play.
           </p>
+          <span className="proof-badge">
+            Powered by a live, reversible program
+          </span>
         </div>
         <div className="header-actions">
-          <button type="button" className="quiet-button" onClick={reset}>
-            Fresh game
-          </button>
           {shared === null ? (
             <button
               type="button"
-              className="quiet-button"
+              className="room-state local"
+              title="Create a shared room to invite another player."
               onClick={() => void createRoom()}
+              disabled={creatingRoom}
             >
-              Share room
+              <span>Local game</span>
+              <strong>
+                {creatingRoom ? "Creating…" : "Create shared room"}
+              </strong>
             </button>
           ) : (
-            <span className={`connection ${shared.connection}`}>
-              {shared.connection}
-            </span>
+            <button
+              type="button"
+              className="room-state"
+              onClick={() => setPanel("share")}
+            >
+              <span>Room {shortRoomId(shared.roomId)}</span>
+              <strong className={`connection ${shared.connection}`}>
+                {title(shared.connection)} · {title(shared.role)}
+              </strong>
+            </button>
           )}
+          <button
+            type="button"
+            className="header-icon-button"
+            onClick={() => setPanel("agent")}
+          >
+            Table Agent
+          </button>
+          <button
+            type="button"
+            className="header-icon-button"
+            onClick={() => openProgram()}
+          >
+            Program <span>{program.cursor}</span>
+          </button>
         </div>
       </header>
 
-      {!mobileNav && (
-        <SurfaceNavigation
-          current={surface}
-          programCells={program.cursor}
-          onSelect={selectSurface}
-        />
-      )}
       <p className="sr-only" role="status">
-        {message}
+        {announcement}
       </p>
 
-      {surface === "table" && (
+      <div className={`workspace ${panel === null ? "" : "panel-open"}`}>
         <section className="table-surface" aria-labelledby="game-heading">
-          <div className="game-heading">
+          <div className="game-strip">
             <div>
-              <p className="eyebrow">
-                Original two-player crystal engine builder
-              </p>
               <h2 id="game-heading">Prism Foundry</h2>
-              <p className="objective">
-                <strong>Objective:</strong> First to 8 Prestige wins.
+              <p>
+                <strong>Be the first player to reach 8 Prestige.</strong>
               </p>
+              <p>On your turn: take two different crystals or buy one card.</p>
             </div>
-            <div className="turn-summary" aria-label="Current turn">
+            <div
+              className={`turn-card ${snapshot.activePlayerId}`}
+              aria-label="Current turn"
+            >
               <span>Turn {snapshot.turnNumber}</span>
               <strong>
-                {snapshot.activePlayerId === "human" ? "Mara" : "Ivo"} to act
+                {snapshot.activePlayerId === "human"
+                  ? "Mara's turn"
+                  : "Ivo's turn"}
               </strong>
-              <span>
+              <small>
                 Mara {snapshot.players.human.prestige} · Ivo{" "}
                 {snapshot.players.ai.prestige}
-              </span>
+              </small>
             </div>
           </div>
 
-          <div className="judge-guide" aria-label="Guided product path">
-            <div>
-              <span className="guide-count">{guide.step}/4</span>
-              <p className="eyebrow">See the product claim</p>
-              <strong>{guide.title}</strong>
-              <p>{guide.detail}</p>
-            </div>
-            <button
-              type="button"
-              className="guide-button"
-              onClick={() =>
-                guide.action({
-                  setSurface: selectSurface,
-                  takePair,
-                  buyCard,
-                  runIvo,
-                })
-              }
-              disabled={guide.disabled}
-            >
-              {guide.actionLabel}
-            </button>
-          </div>
+          {guidedDemo && (
+            <HeroCoach
+              guide={guide}
+              busy={playerBusy}
+              onOpenAgent={() => setPanel("agent")}
+              onOpenProgram={() => openProgram()}
+            />
+          )}
 
           <div className="table-frame">
             <TableCanvas
               snapshot={snapshot}
               onTakePair={takePair}
               onBuyCard={buyCard}
+              onRulebook={() => setPanel("rulebook")}
+              onHouseRules={() => setPanel("agent")}
               focusedIds={changedIds}
+              recommendedColors={recommendedColors}
+              {...(recommendedCardId === undefined
+                ? {}
+                : { recommendedCardId })}
+              ivoThinking={playerBusy}
             />
+
+            <div className="table-toolbar">
+              <details className="actions-popover">
+                <summary>Actions</summary>
+                <LegalActions
+                  options={humanOptions}
+                  snapshot={snapshot}
+                  onAction={commitAction}
+                />
+              </details>
+              <button type="button" onClick={() => setPanel("rulebook")}>
+                Rulebook
+              </button>
+              <button type="button" onClick={() => setPanel("advanced")}>
+                Advanced
+              </button>
+            </div>
+
+            {cellToast !== null && (
+              <div className="cell-toast">
+                <div>
+                  <strong>Cell {cellToast.number} added</strong>
+                  <span>{cellToast.label}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openProgram(cellToast.number)}
+                >
+                  View source
+                </button>
+              </div>
+            )}
+
+            <div className="table-announcement" aria-live="polite">
+              {announcement}
+            </div>
           </div>
 
-          <p className="action-message">{message}</p>
-
-          <section
-            className="accessible-actions"
-            aria-label="Legal tabletop actions"
-          >
-            <div className="action-intro">
-              <p className="eyebrow">One action per turn</p>
-              <h3>
-                {snapshot.activePlayerId === "human"
-                  ? "Choose Mara's action"
-                  : "Ivo is ready"}
-              </h3>
-              <p>
-                Take two different available colors, or buy one glowing
-                affordable card. The canvas and these controls invoke the same
-                registered options.
-              </p>
-            </div>
-            {snapshot.result !== null ? (
-              <p className="winner-copy">
-                <strong>
-                  {snapshot.result.winnerName} wins with{" "}
-                  {snapshot.result.prestige} Prestige.
-                </strong>{" "}
-                Ordinary actions are closed; Program, undo, replay, and fork
-                remain available.
-              </p>
-            ) : snapshot.activePlayerId === "ai" ? (
-              <button
-                type="button"
-                className="primary-action"
-                onClick={() => void runIvo()}
-                disabled={playerBusy}
-              >
-                {playerBusy
-                  ? "Ivo is choosing…"
-                  : "Let GPT-5.6 Luna choose for Ivo"}
+          {snapshot.result !== null && (
+            <div className="winner-copy">
+              <strong>
+                {snapshot.result.winnerName} wins with{" "}
+                {snapshot.result.prestige} Prestige.
+              </strong>
+              <button type="button" onClick={() => openProgram()}>
+                View the final program
               </button>
-            ) : (
-              <LegalActions
-                options={humanOptions}
-                snapshot={snapshot}
-                onAction={commitAction}
+            </div>
+          )}
+
+          <div className="ordinary-tools">
+            <button type="button" onClick={reset}>
+              Fresh game
+            </button>
+            {!guidedDemo && <a href="/judge">Guided demo</a>}
+            {snapshot.activePlayerId === "ai" && !playerBusy && (
+              <button type="button" onClick={() => void runIvo()}>
+                {ivoNeedsRetry ? "Retry Ivo's turn" : "Play Ivo's turn"}
+              </button>
+            )}
+          </div>
+        </section>
+
+        {panel !== null && (
+          <SidePanel title={panelTitle(panel)} onClose={() => setPanel(null)}>
+            {panel === "agent" && (
+              <TableAgent
+                messages={agentMessages}
+                prompt={designerPrompt}
+                onPrompt={setDesignerPrompt}
+                busy={designerBusy}
+                progress={designerProgress}
+                hasRule={snapshot.houseRules.length > 0}
+                isPlayer={shared?.role === "player"}
+                ivoBusy={playerBusy}
+                ivoNeedsRetry={ivoNeedsRetry}
+                onAsk={() => void askDesigner()}
+                onFallback={useExampleRule}
+                onCancel={() => designerAbort.current?.abort()}
+                onRunIvo={() => void runIvo()}
               />
             )}
-          </section>
-        </section>
-      )}
-
-      {surface === "program" && (
-        <ProgramSurface
-          cells={program.cells}
-          cursor={shared === null ? program.cursor : 16 + shared.timelineCursor}
-          selected={selectedCell}
-          onSelect={setSelectedCell}
-          onUndo={() => {
-            if (sharedRef.current !== null) {
-              sharedRef.current.previous();
-              return;
-            }
-            if (gameRef.current.undo())
-              refresh(
-                "Applied the selected cell's inverse patch. Source was not replayed.",
-              );
-          }}
-          onRedo={() => {
-            if (sharedRef.current !== null) {
-              sharedRef.current.next();
-              return;
-            }
-            if (gameRef.current.redo())
-              refresh("Applied the retained forward patch.");
-          }}
-          {...(shared === null
-            ? {}
-            : {
-                onFork: async () => {
-                  const creation = await sharedRef.current?.forkFromHere();
-                  if (creation !== undefined)
-                    setMessage(`Fork ready: ${creation.designerUrl}`);
-                },
-              })}
-        />
-      )}
-
-      {surface === "rules" && (
-        <section className="rules-surface" aria-labelledby="rules-heading">
-          <div className="rules-story">
-            <p className="eyebrow">GPT-5.6 Designer</p>
-            <h2 id="rules-heading">Change the game by appending source.</h2>
-            <p>
-              Describe one supported House Rule. The server asks GPT-5.6 for
-              source; the browser parses, validates, executes, and rolls it back
-              speculatively before a single cell can commit.
-            </p>
-            <ol>
-              <li>Model proposes a source cell.</li>
-              <li>Acorn parses the supported JavaScript subset.</li>
-              <li>The interpreter proves it executes and reverses exactly.</li>
-              <li>
-                The committed rule appears in Program and on the physical table.
-              </li>
-            </ol>
-          </div>
-          <div className="designer-card">
-            <label htmlFor="designer-prompt">Rule request</label>
-            <textarea
-              id="designer-prompt"
-              value={designerPrompt}
-              onChange={(event) => setDesignerPrompt(event.target.value)}
-              rows={4}
-            />
-            <button
-              type="button"
-              className="primary-action"
-              onClick={() => void askDesigner()}
-              disabled={designerBusy || snapshot.houseRules.length > 0}
-            >
-              {designerBusy ? "Designer is working…" : "Ask GPT-5.6 Designer"}
-            </button>
-            {designerBusy && (
-              <button
-                type="button"
-                className="quiet-button"
-                onClick={() => designerAbort.current?.abort()}
-              >
-                Cancel Designer request
-              </button>
+            {panel === "program" && (
+              <ProgramSurface
+                cells={program.cells}
+                cursor={cursor}
+                selected={selectedCell}
+                onSelect={setSelectedCell}
+                onUndo={() => {
+                  if (sharedRef.current !== null) {
+                    if (sharedRef.current.previous())
+                      announce("Moved one cell back in room history.");
+                    return;
+                  }
+                  if (gameRef.current.undo()) {
+                    refresh(
+                      "Undid the latest cell. The table returned to its previous state.",
+                    );
+                    setChangedIds([]);
+                  }
+                }}
+                onRedo={() => {
+                  if (sharedRef.current !== null) {
+                    if (sharedRef.current.next())
+                      announce("Moved one cell forward in room history.");
+                    return;
+                  }
+                  if (gameRef.current.redo()) {
+                    refresh(
+                      "Redid the cell. The table returned to the later state.",
+                    );
+                    setChangedIds([]);
+                  }
+                }}
+                {...(shared === null
+                  ? {}
+                  : {
+                      onFork: async () => {
+                        const creation =
+                          await sharedRef.current?.forkFromHere();
+                        if (creation !== undefined) {
+                          announce(
+                            "A new room was forked here. The original room is unchanged.",
+                          );
+                          setPanel("share");
+                        }
+                      },
+                    })}
+              />
             )}
-            <div className="fallback-rule">
-              <span>AI unavailable?</span>
-              <button
-                type="button"
-                onClick={useExampleRule}
-                disabled={snapshot.houseRules.length > 0}
-              >
-                Use labelled offline example
-              </button>
-            </div>
-            <pre>
-              <code>{RUBY_RESONANCE_SOURCE}</code>
-            </pre>
-          </div>
-        </section>
-      )}
+            {panel === "share" && (
+              <SharePanel
+                shared={shared}
+                creating={creatingRoom}
+                roomStatus={roomStatus}
+                onCreate={() => void createRoom()}
+                onCopied={announce}
+              />
+            )}
+            {panel === "rulebook" && <RulebookPanel />}
+            {panel === "advanced" && (
+              <AdvancedPanel
+                snapshot={snapshot}
+                program={program.cells}
+                cursor={cursor}
+                shared={shared}
+                roomStatus={roomStatus}
+              />
+            )}
+          </SidePanel>
+        )}
+      </div>
 
-      <section className="how-to-play">
-        <details>
-          <summary>How to play Prism Foundry</summary>
-          <div className="rule-grid">
-            <p>
-              <strong>Goal</strong>
-              <br />
-              Be first to reach 8 Prestige.
-            </p>
-            <p>
-              <strong>Take</strong>
-              <br />
-              Move two different available ordinary crystals from the bank to
-              your mat.
-            </p>
-            <p>
-              <strong>Buy</strong>
-              <br />
-              Pay a card's colored cost. Prism tokens cover missing colors.
-            </p>
-            <p>
-              <strong>Build</strong>
-              <br />
-              Purchased cards stay in your tableau and permanently discount
-              their color.
-            </p>
-            <p>
-              <strong>Abilities</strong>
-              <br />
-              Prism gains a wild token. Echo grants another turn.
-            </p>
-            <p>
-              <strong>Turn</strong>
-              <br />
-              Perform exactly one ordinary action, then pass the physical marker
-              unless Echo applies.
-            </p>
-          </div>
-        </details>
-      </section>
-
-      <section className="advanced-surface">
+      <nav className="mobile-nav" aria-label="Table tools">
         <button
           type="button"
-          className="advanced-toggle"
-          aria-expanded={advancedOpen}
-          onClick={() => setAdvancedOpen((open) => !open)}
+          aria-current={panel === null ? "page" : undefined}
+          onClick={() => setPanel(null)}
         >
-          Advanced diagnostics
+          Table
         </button>
-        {advancedOpen && (
-          <div className="diagnostics">
-            <p>
-              <strong>State hash</strong> <code>{snapshot.stateHash}</code>
-            </p>
-            <p>
-              <strong>Genesis</strong>{" "}
-              {program.cells.filter((cell) => cell.kind === "genesis").length}{" "}
-              interpreted cells
-            </p>
-            <p>
-              <strong>History cursor</strong> {program.cursor} /{" "}
-              {program.cells.length}
-            </p>
-            <p>
-              <strong>Room</strong>{" "}
-              {shared === null
-                ? "local"
-                : `${shared.roomId} · ${shared.role} · ${shared.connection}`}
-            </p>
-            {shared?.playerUrl !== undefined && (
-              <p>
-                <a href={shared.playerUrl}>Open Player capability link</a>
-              </p>
-            )}
-          </div>
-        )}
-      </section>
-      {mobileNav && (
-        <SurfaceNavigation
-          current={surface}
-          programCells={program.cursor}
-          onSelect={selectSurface}
-        />
-      )}
+        <button
+          type="button"
+          aria-current={panel === "agent" ? "page" : undefined}
+          onClick={() => setPanel("agent")}
+        >
+          Table Agent
+        </button>
+        <button
+          type="button"
+          aria-current={panel === "program" ? "page" : undefined}
+          onClick={() => openProgram()}
+        >
+          Program
+        </button>
+        <button
+          type="button"
+          aria-current={panel === "share" ? "page" : undefined}
+          onClick={() => setPanel("share")}
+        >
+          Share
+        </button>
+      </nav>
     </main>
   );
 }
 
-function SurfaceNavigation({
-  current,
-  programCells,
-  onSelect,
+function HeroCoach({
+  guide,
+  busy,
+  onOpenAgent,
+  onOpenProgram,
 }: {
-  current: Surface;
-  programCells: number;
-  onSelect: (value: Surface) => void;
+  guide: ReturnType<typeof heroGuide>;
+  busy: boolean;
+  onOpenAgent: () => void;
+  onOpenProgram: () => void;
 }) {
   return (
-    <nav className="surface-tabs" aria-label="Product surfaces">
-      <Tab current={current} value="table" onSelect={onSelect}>
-        Table
-      </Tab>
-      <Tab current={current} value="program" onSelect={onSelect}>
-        Program <span>{programCells}</span>
-      </Tab>
-      <Tab current={current} value="rules" onSelect={onSelect}>
-        Change rules
-      </Tab>
-    </nav>
-  );
-}
-
-function Tab({
-  current,
-  value,
-  onSelect,
-  children,
-}: {
-  current: Surface;
-  value: Surface;
-  onSelect: (value: Surface) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-current={current === value ? "page" : undefined}
-      onClick={() => onSelect(value)}
-    >
-      {children}
-    </button>
-  );
-}
-
-function LegalActions({
-  options,
-  snapshot,
-  onAction,
-}: {
-  options: LegalActionOption[];
-  snapshot: FoundrySnapshot;
-  onAction: (option: LegalActionOption) => void;
-}) {
-  const takeOptions = options.filter(
-    (option) => option.actionId === "take-crystals",
-  );
-  const buyOptions = options.filter((option) => option.actionId === "buy-card");
-  return (
-    <div className="legal-action-groups">
+    <div className="hero-coach" aria-label="Guided demo">
+      <span className="demo-count">Demo · {guide.step} of 4</span>
       <div>
-        <span className="action-group-label">Take two</span>
-        <div className="chip-actions">
-          {takeOptions.map((option) => (
-            <button
-              type="button"
-              key={option.id}
-              onClick={() => onAction(option)}
-            >
-              {humanOptionLabel(option, snapshot)}
-            </button>
-          ))}
-        </div>
+        <strong>{guide.title}</strong>
+        <p>{guide.detail}</p>
       </div>
-      {buyOptions.length > 0 && (
-        <div>
-          <span className="action-group-label">Affordable cards</span>
-          <div className="chip-actions buy-actions">
-            {buyOptions.map((option) => (
-              <button
-                type="button"
-                key={option.id}
-                onClick={() => onAction(option)}
-              >
-                Buy {cardById(snapshot, option.parameters.cardId).name}
-              </button>
-            ))}
-          </div>
-        </div>
+      {guide.action === "agent" && (
+        <button type="button" className="coach-action" onClick={onOpenAgent}>
+          Change a rule
+        </button>
+      )}
+      {guide.action === "program" && (
+        <button type="button" className="coach-action" onClick={onOpenProgram}>
+          View the new cells
+        </button>
+      )}
+      {guide.action === "thinking" && (
+        <span className="coach-thinking">
+          <span className="thinking-dot" />
+          {busy ? "Ivo is choosing…" : "Ivo is ready"}
+        </span>
+      )}
+      {guide.action === "table" && (
+        <span className="coach-table-cue">
+          Use the highlighted piece on the table
+        </span>
       )}
     </div>
+  );
+}
+
+function TableAgent({
+  messages,
+  prompt,
+  onPrompt,
+  busy,
+  progress,
+  hasRule,
+  isPlayer,
+  ivoBusy,
+  ivoNeedsRetry,
+  onAsk,
+  onFallback,
+  onCancel,
+  onRunIvo,
+}: {
+  messages: AgentMessage[];
+  prompt: string;
+  onPrompt: (value: string) => void;
+  busy: boolean;
+  progress: string | null;
+  hasRule: boolean;
+  isPlayer: boolean;
+  ivoBusy: boolean;
+  ivoNeedsRetry: boolean;
+  onAsk: () => void;
+  onFallback: () => void;
+  onCancel: () => void;
+  onRunIvo: () => void;
+}) {
+  return (
+    <section className="agent-panel" aria-labelledby="agent-heading">
+      <header>
+        <p className="panel-kicker">Table Agent</p>
+        <h2 id="agent-heading">Play together. Change the game.</h2>
+        <p>Ivo plays a seat. The Designer may add checked House Rules.</p>
+      </header>
+      <div className="agent-conversation" aria-label="Table Agent conversation">
+        {messages.map((message) => (
+          <article className={`agent-message ${message.role}`} key={message.id}>
+            <span className="role-badge">{roleLabel(message.role)}</span>
+            <p>{message.text}</p>
+          </article>
+        ))}
+        {progress !== null && (
+          <article className="agent-message designer working" role="status">
+            <span className="role-badge">Designer · Rules</span>
+            <p>
+              <span className="thinking-dot" /> {progress}
+            </p>
+          </article>
+        )}
+      </div>
+
+      {(ivoNeedsRetry || ivoBusy) && (
+        <button
+          type="button"
+          className="secondary-action"
+          onClick={onRunIvo}
+          disabled={ivoBusy}
+        >
+          {ivoBusy ? "Ivo is choosing…" : "Play Ivo's turn"}
+        </button>
+      )}
+
+      <div className="agent-composer">
+        <span className="intent-chip">Change a rule</span>
+        <label htmlFor="designer-prompt">What should happen?</label>
+        <textarea
+          id="designer-prompt"
+          value={prompt}
+          onChange={(event) => onPrompt(event.target.value)}
+          rows={4}
+          disabled={isPlayer || hasRule}
+        />
+        {isPlayer ? (
+          <p className="permission-note">
+            Only the room Designer can change rules. You can still play and
+            inspect the Program.
+          </p>
+        ) : (
+          <button
+            type="button"
+            className="primary-action"
+            onClick={onAsk}
+            disabled={busy || hasRule}
+          >
+            {hasRule
+              ? "Rule added"
+              : busy
+                ? "Adding the rule…"
+                : "Ask the Designer"}
+          </button>
+        )}
+        {busy && (
+          <button type="button" className="text-button" onClick={onCancel}>
+            Cancel
+          </button>
+        )}
+        {!hasRule && !busy && !isPlayer && (
+          <button
+            type="button"
+            className="fallback-button"
+            onClick={onFallback}
+          >
+            Use labelled offline example
+          </button>
+        )}
+        <details className="validation-details">
+          <summary>How this was validated</summary>
+          <p>
+            The candidate source is parsed, capability-checked, executed
+            speculatively, and returned to the exact prior state before commit.
+            Invalid source never joins the room.
+          </p>
+        </details>
+      </div>
+    </section>
   );
 }
 
@@ -795,87 +953,384 @@ function ProgramSurface({
   onRedo: () => void;
   onFork?: () => Promise<void>;
 }) {
+  useEffect(() => {
+    document
+      .getElementById(`program-cell-${selected}`)
+      ?.scrollIntoView({ block: "center" });
+  }, [selected]);
+  const selectedCell = cells[selected - 1];
   return (
-    <section className="program-surface" aria-labelledby="program-heading">
-      <header className="program-header">
-        <div>
-          <p className="eyebrow">The complete room program</p>
-          <h2 id="program-heading">One chronological executable history</h2>
-          <p>
-            Genesis is not hidden setup: Cells 1–16 create the table,
-            components, catalog, rules, setup, and first turn. Every later move
-            or rule joins this same sequence.
-          </p>
-        </div>
+    <section className="program-panel" aria-labelledby="program-heading">
+      <header className="program-panel-header">
+        <p className="panel-kicker">Program</p>
+        <h2 id="program-heading">Live room program</h2>
+        <p>Everything on the table was created by the source below.</p>
         <div className="history-actions">
           <button type="button" onClick={onUndo} disabled={cursor <= 16}>
-            Undo cell
+            Undo
           </button>
           <button
             type="button"
             onClick={onRedo}
             disabled={cursor >= cells.length}
           >
-            Redo cell
+            Redo
           </button>
           {onFork !== undefined && (
             <button type="button" onClick={() => void onFork()}>
-              Fork from here
+              Fork here
             </button>
           )}
         </div>
       </header>
-      <ol className="cell-sequence">
-        {cells.map((cell) => {
-          const active = selected === cell.number;
-          const applied = cell.number <= cursor;
-          return (
-            <li
-              key={cell.id}
-              className={`${active ? "selected" : ""} ${applied ? "applied" : "future"}`}
+      <div className="code-surface" aria-label="Chronological room source">
+        {cells.map((cell) => (
+          <article
+            id={`program-cell-${cell.number}`}
+            key={cell.id}
+            className={`program-cell ${selected === cell.number ? "selected" : ""} ${cell.number <= cursor ? "applied" : "future"}`}
+            data-cell-number={cell.number}
+          >
+            <button
+              type="button"
+              className="code-gutter"
+              aria-label={`Inspect Cell ${cell.number}: ${cell.label}`}
+              onClick={() => onSelect(cell.number)}
             >
-              <button
-                type="button"
-                className="cell-heading"
-                onClick={() => onSelect(cell.number)}
-                aria-expanded={active}
-              >
-                <span className="cell-number">Cell {cell.number}</span>
-                <strong>{cell.label}</strong>
-                <span className={`cell-kind ${cell.kind}`}>{cell.kind}</span>
-              </button>
+              <span>{cell.number}</span>
+              <small>{cellAuthor(cell)}</small>
+            </button>
+            <div className="code-block" onClick={() => onSelect(cell.number)}>
+              <div className="cell-comment">
+                // {cell.number} · {cell.label}
+              </div>
               <pre>
-                <code>{cell.source}</code>
+                <code>{highlightSource(cell.source)}</code>
               </pre>
-              {active && (
-                <div className="cell-evidence">
-                  <p>
-                    <strong>Trace</strong>{" "}
-                    {cell.trace.map((event) => event.label).join(" · ") ||
-                      "No explicit trace"}
-                  </p>
-                  <p>
-                    <strong>Transaction</strong> {cell.patchCount} forward
-                    mutation{cell.patchCount === 1 ? "" : "s"}; matching inverse
-                    retained.
-                  </p>
-                  <p>
-                    <strong>State</strong>{" "}
-                    <code>{cell.beforeHash.slice(0, 8)}</code> →{" "}
-                    <code>{cell.afterHash.slice(0, 8)}</code>
-                  </p>
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ol>
-      <div className="repl-caret" aria-label="Next program cell">
-        <span>Cell {cells.length + 1}</span>
-        <code>▌</code>
+            </div>
+          </article>
+        ))}
+        <div className="code-caret">
+          <span>{cells.length + 1}</span>
+          <code>▌</code>
+        </div>
       </div>
+      {selectedCell !== undefined && (
+        <details className="cell-inspector">
+          <summary>Cell {selectedCell.number} details</summary>
+          <dl>
+            <div>
+              <dt>Author</dt>
+              <dd>{cellAuthor(selectedCell)}</dd>
+            </div>
+            <div>
+              <dt>Role</dt>
+              <dd>{selectedCell.kind}</dd>
+            </div>
+            <div>
+              <dt>Trace</dt>
+              <dd>
+                {selectedCell.trace.map((event) => event.label).join(" · ") ||
+                  "No explicit trace"}
+              </dd>
+            </div>
+            <div>
+              <dt>Forward mutations</dt>
+              <dd>{selectedCell.patchCount}</dd>
+            </div>
+            <div>
+              <dt>Inverse</dt>
+              <dd>Available</dd>
+            </div>
+            <div>
+              <dt>State hash</dt>
+              <dd>
+                <code>{selectedCell.beforeHash.slice(0, 8)}</code> →{" "}
+                <code>{selectedCell.afterHash.slice(0, 8)}</code>
+              </dd>
+            </div>
+          </dl>
+        </details>
+      )}
     </section>
   );
+}
+
+function SharePanel({
+  shared,
+  creating,
+  roomStatus,
+  onCreate,
+  onCopied,
+}: {
+  shared: SharedRoomView | null;
+  creating: boolean;
+  roomStatus: string;
+  onCreate: () => void;
+  onCopied: (message: string) => void;
+}) {
+  if (shared === null)
+    return (
+      <section className="share-panel">
+        <p className="panel-kicker">Local game</p>
+        <h2>Create a shared room</h2>
+        <p>
+          This game currently lives in this browser. Create a persistent room to
+          invite another player.
+        </p>
+        <button
+          type="button"
+          className="primary-action"
+          onClick={onCreate}
+          disabled={creating}
+        >
+          {creating ? "Creating…" : "Create shared room"}
+        </button>
+      </section>
+    );
+  const roomReference = `${window.location.origin}/room/${shared.roomId}`;
+  const copy = async (value: string, message: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      onCopied(message);
+    } catch {
+      onCopied("Copy was blocked by the browser. Use the open link instead.");
+    }
+  };
+  return (
+    <section className="share-panel" aria-labelledby="share-heading">
+      <p className="panel-kicker">Prism Foundry room</p>
+      <h2 id="share-heading">Invite another player</h2>
+      <dl className="room-facts">
+        <div>
+          <dt>Room ID</dt>
+          <dd>{shortRoomId(shared.roomId)}</dd>
+        </div>
+        <div>
+          <dt>Connection</dt>
+          <dd className={`connection ${shared.connection}`}>
+            {title(shared.connection)}
+          </dd>
+        </div>
+        <div>
+          <dt>Your role</dt>
+          <dd>{title(shared.role)}</dd>
+        </div>
+      </dl>
+      {shared.playerUrl !== undefined ? (
+        <div className="share-actions">
+          <button
+            type="button"
+            className="primary-action"
+            onClick={() =>
+              void copy(shared.playerUrl!, "Player invite copied.")
+            }
+          >
+            Copy player invite
+          </button>
+          <a
+            className="secondary-action"
+            href={shared.playerUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open player view
+          </a>
+          <button
+            type="button"
+            className="secondary-action"
+            onClick={() => void copy(roomReference, "Room reference copied.")}
+          >
+            Copy room reference
+          </button>
+          <p className="share-note">
+            Send the Player invite link—not the bare room URL—to another player.
+          </p>
+        </div>
+      ) : (
+        <p className="permission-note">
+          This Player session does not expose the room's invite capability. Ask
+          the Designer for the Player invite link.
+        </p>
+      )}
+      <details className="room-technical">
+        <summary>Connection details</summary>
+        <p>{roomStatus}</p>
+      </details>
+    </section>
+  );
+}
+
+function RulebookPanel() {
+  return (
+    <section className="rulebook-panel" aria-labelledby="rulebook-heading">
+      <p className="panel-kicker">Prism Foundry</p>
+      <h2 id="rulebook-heading">Rulebook</h2>
+      <ol>
+        <li>Reach 8 Prestige first.</li>
+        <li>Take two different crystals OR buy one card.</li>
+        <li>Purchased cards give permanent discounts.</li>
+        <li>Prism tokens can pay for any color.</li>
+        <li>
+          Some cards and House Rules change what happens after a purchase.
+        </li>
+      </ol>
+    </section>
+  );
+}
+
+function AdvancedPanel({
+  snapshot,
+  program,
+  cursor,
+  shared,
+  roomStatus,
+}: {
+  snapshot: FoundrySnapshot;
+  program: FoundryProgramCell[];
+  cursor: number;
+  shared: SharedRoomView | null;
+  roomStatus: string;
+}) {
+  return (
+    <section className="advanced-panel">
+      <p className="panel-kicker">Developer diagnostics</p>
+      <h2>Advanced</h2>
+      <dl>
+        <div>
+          <dt>State hash</dt>
+          <dd>
+            <code>{snapshot.stateHash}</code>
+          </dd>
+        </div>
+        <div>
+          <dt>Genesis cells</dt>
+          <dd>{program.filter((cell) => cell.kind === "genesis").length}</dd>
+        </div>
+        <div>
+          <dt>History cursor</dt>
+          <dd>
+            {cursor} / {program.length}
+          </dd>
+        </div>
+        <div>
+          <dt>Room</dt>
+          <dd>
+            {shared === null
+              ? "Local runtime"
+              : `${shared.roomId} · ${shared.role} · ${shared.connection}`}
+          </dd>
+        </div>
+        <div>
+          <dt>Connection log</dt>
+          <dd>{roomStatus}</dd>
+        </div>
+      </dl>
+      <p>
+        The browser executes the Acorn-validated JavaScript subset. Successful
+        cells retain forward and inverse patches; the server orders source but
+        does not execute the simulation.
+      </p>
+    </section>
+  );
+}
+
+function SidePanel({
+  title: panelName,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <aside className="side-panel" aria-label={panelName}>
+      <div className="panel-topbar">
+        <span>{panelName}</span>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={`Close ${panelName}`}
+        >
+          Close
+        </button>
+      </div>
+      <div className="panel-scroll">{children}</div>
+    </aside>
+  );
+}
+
+function LegalActions({
+  options,
+  snapshot,
+  onAction,
+}: {
+  options: LegalActionOption[];
+  snapshot: FoundrySnapshot;
+  onAction: (option: LegalActionOption) => void;
+}) {
+  if (options.length === 0)
+    return <p>No Mara actions are available right now.</p>;
+  return (
+    <div className="semantic-actions">
+      {options.map((option) => (
+        <button type="button" key={option.id} onClick={() => onAction(option)}>
+          {humanOptionLabel(option, snapshot)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function heroGuide(
+  snapshot: FoundrySnapshot,
+  rubyPurchased: boolean,
+): {
+  step: number;
+  title: string;
+  detail: string;
+  action: "table" | "thinking" | "agent" | "program";
+} {
+  if (rubyPurchased)
+    return {
+      step: 4,
+      title: "Your new rule fired",
+      detail:
+        "Ruby Resonance added a Prism. Open the latest cells or keep playing.",
+      action: "program",
+    };
+  if (snapshot.houseRules.length > 0)
+    return {
+      step: 4,
+      title: "Trigger Ruby Resonance",
+      detail:
+        "Select the glowing Crimson Relay and review its payment, then buy it.",
+      action: "table",
+    };
+  if (snapshot.activePlayerId === "ai")
+    return {
+      step: 2,
+      title: "Ivo's turn",
+      detail:
+        "Ivo chooses from the moves available to his seat and plays automatically.",
+      action: "thinking",
+    };
+  if (snapshot.turnNumber === 1)
+    return {
+      step: 1,
+      title: "Take two crystals",
+      detail:
+        "Select Ruby, then Sapphire in the central bank and confirm the move to Mara's mat.",
+      action: "table",
+    };
+  return {
+    step: 3,
+    title: "Invent a House Rule",
+    detail:
+      "Ask the Table Agent to add Ruby Resonance while the table stays in view.",
+    action: "agent",
+  };
 }
 
 function findTake(
@@ -899,7 +1354,7 @@ function humanOptionLabel(
 ): string {
   return option.actionId === "buy-card"
     ? `Buy ${cardById(snapshot, option.parameters.cardId).name}`
-    : `${title(String(option.parameters.first))} + ${title(String(option.parameters.second))}`;
+    : `Take ${title(String(option.parameters.first))} + ${title(String(option.parameters.second))}`;
 }
 
 function consequence(
@@ -907,9 +1362,9 @@ function consequence(
   snapshot: FoundrySnapshot,
 ): string {
   if (option.actionId === "take-crystals")
-    return "Moves two finite bank tokens to Ivo's mat, then passes the turn.";
+    return "Take two available colors, then pass the turn.";
   const card = cardById(snapshot, option.parameters.cardId);
-  return `Pays for ${card.name}, gains ${card.prestige} Prestige and a permanent ${title(card.discountColor)} discount.`;
+  return `Buy ${card.name}, gain ${card.prestige} Prestige, and add a permanent ${title(card.discountColor)} discount.`;
 }
 
 function describeActionChange(
@@ -918,7 +1373,7 @@ function describeActionChange(
   after: FoundrySnapshot,
 ): string {
   if (option.actionId === "take-crystals")
-    return `Two physical tokens moved from the central bank to ${option.actorId === "human" ? "Mara's" : "Ivo's"} mat.`;
+    return `Two crystals moved from the bank to ${option.actorId === "human" ? "Mara's" : "Ivo's"} mat.`;
   const card = cardById(after, option.parameters.cardId);
   const actor = after.players[option.actorId === "human" ? "human" : "ai"];
   const prismBefore = before.tokens.filter(
@@ -927,7 +1382,7 @@ function describeActionChange(
   const prismAfter = after.tokens.filter(
     (token) => token.containerId === actor.matId && token.color === "prism",
   ).length;
-  return `${card.name} moved from the market to the tableau; Prestige is now ${actor.prestige} and the ${title(card.discountColor)} discount increased.${prismAfter > prismBefore ? " Ruby resonance or the printed Prism ability also moved a wild token to the mat." : ""}`;
+  return `${card.name} moved to the tableau. ${actor.name} now has ${actor.prestige} Prestige and a ${title(card.discountColor)} discount.${prismAfter > prismBefore ? " A Prism also moved to the mat." : ""}`;
 }
 
 function inspection(snapshot: FoundrySnapshot): string {
@@ -946,85 +1401,44 @@ function inspection(snapshot: FoundrySnapshot): string {
   });
 }
 
-function guideState(
-  snapshot: FoundrySnapshot,
-  programSeen = false,
-): {
-  step: number;
-  title: string;
-  detail: string;
-  actionLabel: string;
-  disabled: boolean;
-  action: (tools: {
-    setSurface: (surface: Surface) => void;
-    takePair: (
-      first: OrdinaryCrystalColor,
-      second: OrdinaryCrystalColor,
-    ) => void;
-    buyCard: (cardId: string) => void;
-    runIvo: () => Promise<void>;
-  }) => void;
-} {
-  if (!programSeen && snapshot.turnNumber === 1)
-    return {
-      step: 1,
-      title: "Inspect how the table was created",
-      detail: "The first 16 cells create every component and rule you can see.",
-      actionLabel: "Open the complete program",
-      disabled: false,
-      action: ({ setSurface }) => setSurface("program"),
-    };
-  if (
-    snapshot.activePlayerId === "human" &&
-    snapshot.turnNumber === 1 &&
-    snapshot.houseRules.length === 0
-  )
-    return {
-      step: 2,
-      title: "Take control of Mara",
-      detail:
-        "Select Ruby + Sapphire; the tokens move and a reversible action cell is appended.",
-      actionLabel: "Take Ruby + Sapphire",
-      disabled: snapshot.bank.ruby === 0 || snapshot.bank.sapphire === 0,
-      action: ({ takePair }) => takePair("ruby", "sapphire"),
-    };
-  if (snapshot.activePlayerId === "ai")
-    return {
-      step: 3,
-      title: "Let Ivo choose a legal action",
-      detail:
-        "GPT-5.6 Luna receives options, never arbitrary source. Fallback remains deterministic.",
-      actionLabel: "Let Ivo move",
-      disabled: false,
-      action: ({ runIvo }) => void runIvo(),
-    };
-  if (snapshot.houseRules.length === 0)
-    return {
-      step: 4,
-      title: "Rewrite the live game",
-      detail:
-        "Ask GPT-5.6 Designer for a validated House Rule, or use the labelled offline example.",
-      actionLabel: "Open Change rules",
-      disabled: false,
-      action: ({ setSurface }) => setSurface("rules"),
-    };
-  return {
-    step: 4,
-    title: "The new rule is part of the game",
-    detail:
-      "Buy a Ruby card to fire Ruby resonance, then keep playing to 8 Prestige.",
-    actionLabel: "Trigger the rule · Buy Crimson Relay",
-    disabled: !snapshot.legalActions.some(
-      (option) =>
-        option.actionId === "buy-card" &&
-        option.parameters.cardId === "crimson-relay",
-    ),
-    action: ({ buyCard }) => buyCard("crimson-relay"),
-  };
+function changedObjectIds(cell: FoundryProgramCell): string[] {
+  return cell.forward.mutations.flatMap((mutation) => {
+    if (mutation.kind === "property.set" || mutation.kind === "array.set")
+      return [mutation.objectId];
+    if (mutation.kind === "binding.set") return [mutation.name];
+    return [];
+  });
+}
+
+function roleLabel(role: AgentRole): string {
+  if (role === "ivo") return "Ivo · Player";
+  if (role === "designer") return "Designer · Rules";
+  return "You · Rule request";
+}
+
+function cellAuthor(cell: FoundryProgramCell): string {
+  if (cell.kind === "genesis") return "Game";
+  if (cell.kind === "designer") return "Designer";
+  return /actorId:\s*["']ai["']/.test(cell.source) ? "Ivo" : "Mara";
+}
+
+function panelTitle(panel: Panel): string {
+  if (panel === "agent") return "Table Agent";
+  if (panel === "program") return "Program";
+  if (panel === "share") return "Share room";
+  if (panel === "rulebook") return "Rulebook";
+  return "Advanced";
+}
+
+function shortRoomId(roomId: string): string {
+  return roomId
+    .replace(/[^a-z0-9]/gi, "")
+    .slice(0, 6)
+    .toUpperCase();
 }
 
 function title(value: string): string {
   return value.slice(0, 1).toUpperCase() + value.slice(1);
 }
 
-export const __test = { inspection, humanOptionLabel, guideState };
+export const __test = { inspection, humanOptionLabel, heroGuide };

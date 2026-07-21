@@ -112,11 +112,14 @@ projection draws the complete bank, market, deck, mats, tokens, discounts,
 Prestige, turn marker, Rulebook, House Rules, purchased cards, and winner from
 the runtime snapshot.
 
-The current judge sequence is genesis inspection → Mara takes Ruby + Sapphire
-→ Luna/fallback chooses for Ivo → Designer/offline example appends Ruby
-resonance → Mara buys Crimson Relay and fires the new rule → continued ordinary
-play to 8 Prestige. The rejected sample source has been deleted from the
-production tree; Git history preserves it.
+The reset architecture remains accepted, while its initial presentation was
+superseded by the focused hero pass. The current judge sequence is direct table
+play: Mara selects Ruby and Sapphire → Luna/fallback automatically chooses for
+Ivo → the Table Agent appends Ruby Resonance → Mara buys Crimson Relay and
+fires the new rule → optional Program inspection at the exact appended cell →
+continued ordinary play to 8 Prestige. Program remains complete, but no longer
+blocks understanding the game. The rejected sample source has been deleted
+from the production tree; Git history preserves it.
 
 Validation and deployed identity are recorded in `STATUS.md` and
 `docs/08-SUBMISSION-EVIDENCE.md`. Even after they pass, this document's release
@@ -141,8 +144,7 @@ Prism Foundry images were captured from the verified production replacement.
 
 Five-second review of the replacement candidate:
 
-1. **What is this?** A board game created by its room program.
-2. **What is the goal?** First to 8 Prestige.
-3. **What next?** Open the complete program, then follow the gold action.
-4. **Where can AI change rules?** The first-level Change rules surface.
-5. **Which character is mine?** Mara, identified on the turn card and physical mat.
+This historical screenshot review describes the first Prism Foundry presentation,
+not the final hero candidate. Its required Program-first next step was later
+removed. Current hero evidence and the eight-question five-second review are in
+`docs/18-HERO-POLISH-AUDIT.md`.

@@ -94,3 +94,42 @@ beside the rejected historical baseline.
 ## Owner-only evidence
 
 Intentionally not requested during this gate: eligibility answers, private Codex Session ID, video, Devpost copy, attestations, final tag, and final submission action.
+
+## Final hero-polish candidate
+
+Accepted technical baseline: `c4135308128c7b43f18ebeb53ef37083610959f7`.
+The focused pass preserves Prism Foundry and its room-as-program architecture
+while replacing the Program-first presentation with a player-first 60–75 second
+track: direct crystal selection → automatic Ivo → role-labelled Table Agent →
+physical House Rule → contextual Ruby purchase → exact appended source.
+
+Local validation passed on 2026-07-21:
+
+- format, lint, and strict application/Worker typecheck;
+- 43 unit tests across 9 files;
+- 14 Worker tests across 3 files;
+- 21 executed desktop/mobile Playwright cases with 3 intentional cross-project
+  skips, covering first viewport, direct table interaction, automatic Ivo,
+  Table Agent, Ruby Resonance, Program, fallback, sharing, reconnect,
+  rollback/forward, fork, and focus;
+- production build;
+- secret scan over 120 repository files plus build output;
+- license scan over 27 direct dependencies.
+
+The build retains the known non-blocking Pixi chunk-size warning. Clean-clone,
+CI, deployment, exact-SHA production, live model, forced fallback, and final
+two-browser verification are recorded only after they run against the committed
+candidate.
+
+Candidate screenshots:
+
+- `evidence/local/hero-polish-1440x900.png`;
+- `evidence/local/hero-polish-1280x800.png`;
+- `evidence/local/hero-polish-pixel7.png`;
+- `evidence/local/hero-polish-ruby-resonance.png`;
+- `evidence/local/hero-polish-table-agent.png`;
+- `evidence/local/hero-polish-program.png`;
+- `evidence/local/hero-polish-share-dialog.png`;
+- `evidence/local/hero-polish-player-view.png`.
+
+These are manual review evidence, not owner approval.

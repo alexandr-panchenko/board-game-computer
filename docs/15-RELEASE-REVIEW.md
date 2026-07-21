@@ -1,4 +1,4 @@
-# Release review — Prism Foundry replacement
+# Release review — Prism Foundry hero candidate
 
 Review date: 2026-07-21
 
@@ -19,15 +19,22 @@ M9 remains in progress. The final tag, eligibility confirmation, Codex Session I
 
 ## Human-product checklist
 
-- [x] First viewport states **The board game is the program.**
-- [x] First viewport names Prism Foundry and **First to 8 Prestige wins.**
-- [x] Mara, turn, both Prestige values, complete table, and one gold next action are visible.
-- [x] Table, Program, and Change rules are first-level surfaces.
+- [x] First viewport says **Play the game. Rewrite the rules.** for tabletop players and designers.
+- [x] First viewport names Prism Foundry, says **Be the first player to reach 8 Prestige**, and explains the one-action turn.
+- [x] Mara, Ivo, current turn, complete table, and one dominant next action are visible.
+- [x] Crystal stacks and market cards are the primary direct interactions.
+- [x] Ivo visibly thinks and plays automatically, with a recovery action on failure.
+- [x] Table Agent combines chronological Ivo and Designer messages while preserving explicit authority labels.
+- [x] Program and Table Agent open as closeable drawers without replacing the table.
+- [x] Program is continuous syntax-highlighted chronological source with technical evidence collapsed.
+- [x] Rulebook is a physical table interaction; the repeated bottom How to Play grid is absent.
+- [x] Local versus persistent-room state, Create shared room, and Player invite are discoverable.
 - [x] Physical components use original procedural vector art rather than labelled room rectangles.
 - [x] Legal copy is human-readable and primary UI does not expose internal IDs.
-- [x] How to play is available from the first screen.
 - [x] Advanced hashes and room internals are collapsed.
-- [x] Mobile has fixed bottom navigation and a table-first first viewport.
+- [x] Mobile retains the table as base and uses touch-safe drawers.
+- [x] Full hero-polish local validation passed, including desktop/mobile hero and shared-room automation.
+- [ ] Clean-clone, CI, deployment, and production verification is pending.
 - [ ] Explicit owner product acceptance has not yet been received.
 
 ## Mandatory behavior checklist
@@ -45,8 +52,8 @@ M9 remains in progress. The final tag, eligibility confirmation, Codex Session I
 
 ## Validation gate
 
-The final row is filled with exact commands, dates, CI run, deployed commit, production smoke, and screenshots only after the replacement completes the full local and production matrix. Passing automation does not itself satisfy the owner acceptance checkbox.
+The pending row is filled with exact commands, dates, CI run, deployed commit, production smoke, shared-room verification, and screenshots only after the hero candidate completes the full local and production matrix. Passing automation does not itself satisfy the owner acceptance checkbox.
 
 ## Release decision
 
-Do not create `build-week-submission`. Do not mark M9 complete. Deploy and verify the replacement, then return it for human judgment with the release state unchanged: **AWAITING OWNER PRODUCT APPROVAL**.
+Do not create `build-week-submission`. Do not mark M9 complete. Deploy and verify the hero candidate, then return it for human judgment with the release state unchanged: **AWAITING OWNER PRODUCT APPROVAL**.

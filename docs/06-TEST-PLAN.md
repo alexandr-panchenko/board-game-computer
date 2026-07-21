@@ -78,23 +78,30 @@ bun run licenses:check
 
 ## Desktop browser coverage
 
-- product statement, objective, Mara, tabletop, and one clear next action visible on first load.
+- player-centred product statement, objective, both mats, bank, market, current turn, full tabletop, and one clear next action visible in the 1440 × 900 first viewport.
 - actual Pixi canvas initializes with no page-breaking console error.
 - Advanced diagnostics exists and is collapsed.
-- Program shows exactly 16 genesis cells before play, full source, and one next-cell caret.
+- Ruby and Sapphire can be selected directly on the table and committed through one in-table confirmation.
+- affordable cards expose visible contextual Buy; unaffordable cards remain inspectable and disabled.
+- Ivo's mat shows thinking, Luna/fallback completes automatically, the cell appends, and Table Agent identifies `Ivo · Player`.
+- Rulebook opens from the physical table and the old bottom How to Play grid is absent.
+- Change a rule opens Table Agent without replacing the table; Ruby Resonance commits, House Rules updates, and the Ruby purchase visibly grants a Prism.
+- Program shows exactly 16 setup cells before play, full syntax-highlighted source, subtle chronological boundaries, collapsed technical details, and one next-cell caret.
+- **View source** opens the exact latest cell beside the table.
 - human-readable legal actions contain no internal IDs.
 - keyboard focus outline is visible.
-- mocked live hero path: Program → Mara → Luna → Designer → Ruby resonance trigger → Program → undo/redo.
+- default copy excludes `One chronological executable history`, `Genesis is not hidden setup`, `Acorn parses`, `speculatively`, `inverse patch`, `state hash`, and internal IDs.
+- mocked live hero path: Mara → automatic Luna → Table Agent Designer → Ruby Resonance trigger → exact Program cell → undo/redo.
 - AI-disabled fallback completes the same product proof truthfully.
-- persistent two-client convergence, reconnect, prefix rollback/forward, and fork.
+- Local game is labelled; Create shared room produces `/room/<id>`, opens Share, retains a Player invite, joins as Player without retaining the fragment, and preserves two-client convergence, reconnect, prefix rollback/forward, and fork.
 - real deterministic 8-Prestige ending is covered by runtime execution and manually verified on the rendered table.
 
 ## Mobile browser coverage
 
 - Pixel 7 first viewport is table-first and has no horizontal overflow.
-- fixed bottom navigation reaches Table, Program, and Change rules directly.
+- fixed controls reach Table Agent, Program, Rulebook, and Share drawers directly without losing table context.
 - touch targets are at least 44 px.
-- Program source and Designer controls do not require traversing unrelated content.
+- Program source remains readable and Table Agent controls do not require traversing unrelated content.
 - complete hero and fallback behavior run in the same responsive application.
 
 ## Manual product review
@@ -115,7 +122,7 @@ After deployment:
 
 1. Verify exact deployed commit and CI/deploy run.
 2. Open `/` and `/judge` in clean desktop and mobile contexts.
-3. Run the live GPT-5.6 Designer and Luna path.
+3. Run automatic live GPT-5.6 Luna and the Table Agent's GPT-5.6 Designer path.
 4. Run AI-disabled fallback.
 5. Create two clean shared clients; verify convergence, reconnect, rollback/forward, and fork.
 6. Run production smoke, secret scan, and license scan.
