@@ -3,22 +3,21 @@
 > **Working title.** Describe, play, and rewrite a board game in one shared
 > room—people and GPT-5.6 operate the same safe, reversible tabletop language.
 
-**Build Week status:** Milestone 6 is deployed and production-verified. The
-repository now combines the reversible interpreter, complete deterministic
-`Shifting Vaults`, server-only GPT-5.6 Designer and Luna paths, guided replay,
-takeover, triggered live rule, real endings, and deterministic fallbacks.
-Persistent collaboration is the active milestone.
+**Build Week status:** Milestone 7 is locally complete and awaiting its
+production gate. The repository now also includes capability-linked persistent
+rooms, hibernatable WebSockets, one-in-flight optimistic rebase, reconnect,
+patch timeline, and persistent prefix forks.
 
 ## Live demo
 
 - Main: <https://board-game-computer.sanocks.workers.dev/>
 - Judge route: <https://board-game-computer.sanocks.workers.dev/judge>
-- Current status: **M6 complete and production-verified; M7 persistent shared
-  rooms in progress**
+- Current status: **M7 complete locally; production deployment/verification
+  pending**
 
 The deployed build proves the complete end-to-end sequence on desktop and
 mobile, including a strict GPT-authored rule boundary, AI-seat selection,
-budget guard, and labelled fallback.
+budget guard, labelled fallback, and two-browser convergence.
 
 ## 60–90 second judge path
 
@@ -37,6 +36,11 @@ budget guard, and labelled fallback.
 Expected result: the judge sees that the table is not an animation or an
 unconstrained model. It is a deterministic program with reversible commands,
 legal actions, live rule editing, replay, and multiplayer-ready ordering.
+
+For the optional collaboration proof, press **Create shared room**, open the
+Player link in a second browser, make a move, reload, inspect the previous
+patch, and fork that prefix. The server stores only capability hashes; the UI
+never displays a raw capability as text.
 
 ## Demo video
 

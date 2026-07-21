@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { TableCanvas } from "../render";
 import { RoomRuntime, type LegalActionOption } from "../runtime";
@@ -18,6 +18,14 @@ import {
   resolveChosenOption,
   runDesignerRepairLoop,
 } from "./designer-orchestrator";
+import {
+  accessFromCreation,
+  accessFromLocation,
+  createSharedRoom,
+  SharedRoomClient,
+  type RoomAccess,
+  type SharedRoomView,
+} from "./shared-room-client";
 
 export function App() {
   const isJudge = window.location.pathname === "/judge";
@@ -46,17 +54,61 @@ export function App() {
   );
   const [runtimeTrace, setRuntimeTrace] = useState("No trace recorded yet.");
   const [, setRuntimeRevision] = useState(0);
+  const sharedRef = useRef<SharedRoomClient | null>(null);
+  const [sharedView, setSharedView] = useState<SharedRoomView | null>(null);
+  const [sharingBusy, setSharingBusy] = useState(false);
+
+  const attachSharedRoom = useCallback(
+    (access: RoomAccess, playerUrl?: string) => {
+      sharedRef.current?.destroy();
+      const client = new SharedRoomClient(
+        access,
+        (nextGame, view, message) => {
+          setGame(nextGame);
+          setSharedView(view);
+          setGameMessage(message);
+          setGameRevision((value) => value + 1);
+        },
+        playerUrl === undefined ? {} : { playerUrl },
+      );
+      sharedRef.current = client;
+      setSharedView(client.view());
+      setJourney("shared");
+      setReplayStep(3);
+      setReplayTrace(CURATED_REPLAY[2]?.trace ?? []);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const access = accessFromLocation();
+    const timer =
+      access === null
+        ? null
+        : window.setTimeout(() => attachSharedRoom(access), 0);
+    return () => {
+      if (timer !== null) window.clearTimeout(timer);
+      sharedRef.current?.destroy();
+    };
+  }, [attachSharedRoom]);
+
   const snapshot = game.snapshot();
   const mara = snapshot.explorers["explorer-mara"]!;
   const ivo = snapshot.explorers["explorer-ivo"]!;
 
   const performOption = useCallback(
     (option: LegalActionOption) => {
-      const result = game.perform(option);
-      if (result.ok) {
-        const labels = result.commit.transaction.forward.trace.map(
-          (event) => event.label,
-        );
+      const shared = sharedRef.current;
+      const result = shared === null ? game.perform(option) : null;
+      const succeeded =
+        shared === null ? result?.ok === true : shared.proposeAction(option);
+      if (succeeded) {
+        const labels =
+          result?.ok === true
+            ? result.commit.transaction.forward.trace.map(
+                (event) => event.label,
+              )
+            : ["optimistic shared cell"];
         setGameMessage(
           `${option.label} committed as one reversible cell${labels.length > 0 ? ` · ${labels.join(" → ")}` : ""}.`,
         );
@@ -69,7 +121,10 @@ export function App() {
           const endTurn = game
             .legalActions("human")
             .find((candidate) => candidate.actionId === "end-turn");
-          if (endTurn !== undefined) game.perform(endTurn);
+          if (endTurn !== undefined) {
+            if (shared === null) game.perform(endTurn);
+            else shared.proposeAction(endTurn);
+          }
           setJourney("human-done");
           setGameMessage(
             "Human move committed through performAction; Mara passes to Ivo for the AI step.",
@@ -93,8 +148,12 @@ export function App() {
             `Blue-gate Scenario fired · ${labels.join(" → ")} · play remains live.`,
           );
         }
-      } else {
+      } else if (result?.ok === false) {
         setGameMessage(`${result.failure.code}: ${result.failure.message}`);
+      } else {
+        setGameMessage(
+          "Shared action is paused until the room is connected and viewing live history.",
+        );
       }
       setGameRevision((value) => value + 1);
     },
@@ -132,7 +191,16 @@ export function App() {
     setRuntimeRevision((value) => value + 1);
   };
 
+  const leaveSharedRoom = () => {
+    if (sharedRef.current === null) return;
+    sharedRef.current.destroy();
+    sharedRef.current = null;
+    setSharedView(null);
+    history.replaceState(null, "", "/judge");
+  };
+
   const reset = () => {
+    leaveSharedRoom();
     setGame(createCuratedCheckpoint());
     setDesignerCells([]);
     setJourney("takeover");
@@ -142,6 +210,7 @@ export function App() {
   };
 
   const freshCopy = () => {
+    leaveSharedRoom();
     setGame(new ShiftingVaultsGame());
     setDesignerCells([]);
     setJourney("free-play");
@@ -151,6 +220,7 @@ export function App() {
   };
 
   const replayFromStart = () => {
+    leaveSharedRoom();
     setGame(createGuidedReplayStep(0));
     setDesignerCells([]);
     setJourney("replay");
@@ -181,6 +251,28 @@ export function App() {
     );
   };
 
+  const startSharedRoom = async () => {
+    setSharingBusy(true);
+    try {
+      const checkpoint = createCuratedCheckpoint();
+      const creation = await createSharedRoom(checkpoint.snapshot().stateHash);
+      setGame(checkpoint);
+      setDesignerCells([]);
+      attachSharedRoom(accessFromCreation(creation), creation.playerUrl);
+      setGameMessage(
+        "Persistent room created. Share the Player link; capability secrets remain in URL fragments.",
+      );
+    } catch (error) {
+      setGameMessage(
+        error instanceof Error
+          ? error.message
+          : "Could not create shared room.",
+      );
+    } finally {
+      setSharingBusy(false);
+    }
+  };
+
   const useExampleRule = () => {
     const candidate = {
       source: BLUE_GATE_HERO_SOURCE,
@@ -191,7 +283,18 @@ export function App() {
     };
     const speculative = speculateDesignerCandidate(game, candidate.source);
     const result = speculative.ok
-      ? commitDesignerCandidate(game, candidate.source)
+      ? sharedRef.current === null
+        ? commitDesignerCandidate(game, candidate.source)
+        : sharedRef.current.proposeDesigner(candidate.source)
+          ? ({ ok: true } as const)
+          : ({
+              ok: false,
+              diagnostic: {
+                code: "TS_ROOM_NOT_READY",
+                phase: "conflict" as const,
+                message: "Shared room is not ready for a Designer proposal.",
+              },
+            } as const)
       : speculative;
     if (!result.ok) {
       setDesignerStatus(
@@ -248,7 +351,20 @@ export function App() {
           );
         },
         validate: (source) => speculateDesignerCandidate(game, source),
-        commit: (source) => commitDesignerCandidate(game, source),
+        commit: (source) =>
+          sharedRef.current === null
+            ? commitDesignerCandidate(game, source)
+            : sharedRef.current.proposeDesigner(source)
+              ? { ok: true }
+              : {
+                  ok: false,
+                  diagnostic: {
+                    code: "TS_ROOM_NOT_READY",
+                    phase: "conflict",
+                    message:
+                      "Shared room is not ready for a Designer proposal.",
+                  },
+                },
         onRejected: (diagnostic) => {
           setDesignerStatus(
             `Candidate rejected locally (${diagnostic.code}); requesting repair.`,
@@ -304,7 +420,7 @@ export function App() {
       });
       if (stillLegal === undefined) throw new Error("AI_ACTION_UNAVAILABLE");
       performOption(stillLegal);
-      finishSeatTurn(game, "ai");
+      finishSeatTurn(game, "ai", performOption);
       setJourney("ai-done");
       setGameMessage(
         `Live ${response.model}: ${response.choice.reason} · committed through performAction.`,
@@ -312,7 +428,7 @@ export function App() {
     } catch {
       const fallback = game.chooseFallbackAction("ai");
       performOption(fallback);
-      finishSeatTurn(game, "ai");
+      finishSeatTurn(game, "ai", performOption);
       setJourney("ai-done");
       setGameMessage(
         `Labelled deterministic fallback chose ${fallback.label} after the live AI path was unavailable.`,
@@ -410,6 +526,7 @@ export function App() {
               <div className="game-history-actions">
                 <button
                   type="button"
+                  disabled={sharedView !== null}
                   onClick={() => {
                     setGameMessage(
                       game.runtime.undo()
@@ -423,6 +540,7 @@ export function App() {
                 </button>
                 <button
                   type="button"
+                  disabled={sharedView !== null}
                   onClick={() => {
                     setGameMessage(
                       game.runtime.redo()
@@ -448,7 +566,24 @@ export function App() {
                     className="ai-turn-button"
                     type="button"
                     onClick={() => {
-                      const results = game.playFallbackTurn("ai");
+                      const results = [];
+                      for (
+                        let step = 0;
+                        step < 12 && game.snapshot().activeSeatId === "ai";
+                        step += 1
+                      ) {
+                        const option = game.chooseFallbackAction("ai");
+                        if (sharedRef.current === null) {
+                          results.push(game.perform(option));
+                        } else {
+                          const before = game.snapshot().stateHash;
+                          performOption(option);
+                          results.push({
+                            ok: game.snapshot().stateHash !== before,
+                          });
+                        }
+                        if (option.actionId === "end-turn") break;
+                      }
                       setJourney("ai-done");
                       setGameMessage(
                         `Labelled deterministic fallback completed ${String(results.length)} legal AI cells.`,
@@ -479,6 +614,90 @@ export function App() {
             <dd data-testid="game-state-hash">{snapshot.stateHash}</dd>
           </dl>
 
+          <section className="room-sharing" aria-label="Persistent shared room">
+            <h3>Persistent room</h3>
+            {sharedView === null ? (
+              <>
+                <p>
+                  Create a checkpoint room with separate Designer and Player
+                  capability links.
+                </p>
+                <button
+                  type="button"
+                  disabled={sharingBusy}
+                  onClick={() => void startSharedRoom()}
+                >
+                  {sharingBusy
+                    ? "Creating persistent room…"
+                    : "Create shared room"}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="room-connection" role="status">
+                  {sharedView.connection} · {sharedView.role} · seq{" "}
+                  {sharedView.confirmedSeq}
+                  {sharedView.pendingCount > 0
+                    ? ` · ${String(sharedView.pendingCount)} pending`
+                    : " · converged"}
+                </p>
+                <p>
+                  Timeline {sharedView.timelineCursor} /{" "}
+                  {sharedView.timelineLength}
+                  {sharedView.live ? " · live" : " · inspecting prefix"}
+                </p>
+                {sharedView.playerUrl === undefined ? null : (
+                  <a
+                    href={sharedView.playerUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open Player link
+                  </a>
+                )}
+                <div className="room-timeline-actions">
+                  <button
+                    type="button"
+                    disabled={
+                      sharedView.pendingCount > 0 ||
+                      sharedView.timelineCursor === 0
+                    }
+                    onClick={() => sharedRef.current?.previous()}
+                  >
+                    Previous cell
+                  </button>
+                  <button
+                    type="button"
+                    disabled={sharedView.pendingCount > 0 || sharedView.live}
+                    onClick={() => sharedRef.current?.next()}
+                  >
+                    Next cell
+                  </button>
+                  <button
+                    type="button"
+                    disabled={sharedView.pendingCount > 0 || sharedView.live}
+                    onClick={() => sharedRef.current?.returnLive()}
+                  >
+                    Return live
+                  </button>
+                  <button
+                    type="button"
+                    disabled={sharedView.pendingCount > 0}
+                    onClick={() => void sharedRef.current?.forkFromHere()}
+                  >
+                    Fork from here
+                  </button>
+                </div>
+                {sharedView.forkUrl === undefined ? null : (
+                  <a href={sharedView.forkUrl}>Open forked room</a>
+                )}
+                <p className="muted">
+                  Participants with a capability link can view room history.
+                </p>
+              </>
+            )}
+          </section>
+
           <section className="designer-agent" aria-label="Designer agent">
             <h3>GPT-5.6 Designer</h3>
             <label className="source-label" htmlFor="designer-prompt">
@@ -492,12 +711,16 @@ export function App() {
             />
             <button
               type="button"
-              disabled={designerBusy}
+              disabled={designerBusy || sharedView?.role === "player"}
               onClick={() => void askDesigner()}
             >
               {designerBusy ? "Validating GPT-5.6…" : "Ask GPT-5.6 Designer"}
             </button>
-            <button type="button" onClick={useExampleRule}>
+            <button
+              type="button"
+              disabled={sharedView?.role === "player"}
+              onClick={useExampleRule}
+            >
               Use labelled example rule
             </button>
             <p className="designer-status" role="status">
@@ -563,7 +786,13 @@ export function App() {
       </section>
 
       <footer className="actionbar">
-        <span>{isJudge ? "Judge route ready" : "Demo route ready"}</span>
+        <span>
+          {sharedView !== null
+            ? "Shared room live"
+            : isJudge
+              ? "Judge route ready"
+              : "Demo route ready"}
+        </span>
         <div>
           {journey === "replay" ? (
             <>
@@ -606,6 +835,7 @@ type JourneyStage =
   | "rule-done"
   | "return-to-gate"
   | "triggered"
+  | "shared"
   | "free-play";
 
 function seatLabel(seatId: string): string {
@@ -632,12 +862,18 @@ function actionConsequence(option: LegalActionOption): string {
   return `${option.label} affects ${target}; the browser retains and revalidates literal arguments.`;
 }
 
-function finishSeatTurn(game: ShiftingVaultsGame, seatId: string): void {
+function finishSeatTurn(
+  game: ShiftingVaultsGame,
+  seatId: string,
+  perform: (option: LegalActionOption) => void = (option) => {
+    game.perform(option);
+  },
+): void {
   if (game.snapshot().activeSeatId !== seatId) return;
   const endTurn = game
     .legalActions(seatId)
     .find((option) => option.actionId === "end-turn");
-  if (endTurn !== undefined) game.perform(endTurn);
+  if (endTurn !== undefined) perform(endTurn);
 }
 
 function isRecommended(
@@ -724,6 +960,15 @@ function coachFor(journey: JourneyStage, replayStep: number) {
           "Continue toward a real ending, return to the checkpoint, replay, or create a fresh copy.",
         detail:
           "The rule is a normal reversible cell; later actions still use the same runtime.",
+      };
+    case "shared":
+      return {
+        kicker: "Persistent shared room",
+        title: "One ordered program, live in every browser",
+        instruction:
+          "Use a legal action here or from the Player link; pending patches rebase against one canonical head.",
+        detail:
+          "Reload, inspect the patch timeline, return live, or fork a prefix without changing the parent.",
       };
     case "free-play":
       return {

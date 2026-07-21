@@ -356,6 +356,155 @@ test("judge path completes with AI fallback and example rule", async ({
   );
 });
 
+test("two-client room converges through one canonical order", async ({
+  page,
+  browser,
+}) => {
+  await page.goto("/judge");
+  await page.getByRole("button", { name: "Create shared room" }).click();
+  await expect(page.getByText(/connected · designer · seq 0/)).toBeVisible();
+  const playerUrl = await page
+    .getByRole("link", { name: "Open Player link" })
+    .getAttribute("href");
+  expect(playerUrl).not.toBeNull();
+
+  const playerContext = await browser.newContext();
+  const player = await playerContext.newPage();
+  await player.goto(playerUrl!);
+  await expect(player.getByText(/connected · player · seq 0/)).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "Move → azure-gate", exact: true })
+    .click();
+  await expect(page.getByText(/connected · designer · seq 1/)).toBeVisible();
+  await expect(player.getByText(/connected · player · seq 1/)).toBeVisible();
+  await expect
+    .poll(async () => {
+      const left = await page.getByTestId("game-state-hash").textContent();
+      const right = await player.getByTestId("game-state-hash").textContent();
+      return left === right;
+    })
+    .toBe(true);
+  await playerContext.close();
+});
+
+test("two-client room rejects a concurrent stale move and still converges", async ({
+  page,
+  browser,
+}) => {
+  await page.goto("/judge");
+  await page.getByRole("button", { name: "Create shared room" }).click();
+  await expect(page.getByText(/connected · designer · seq 0/)).toBeVisible();
+  const playerUrl = await page
+    .getByRole("link", { name: "Open Player link" })
+    .getAttribute("href");
+  const playerContext = await browser.newContext();
+  const player = await playerContext.newPage();
+  await player.goto(playerUrl!);
+  await expect(player.getByText(/connected · player · seq 0/)).toBeVisible();
+
+  const dispatchAt = Date.now() + 500;
+  await Promise.all([
+    page
+      .getByRole("button", { name: "Move → azure-gate", exact: true })
+      .evaluate(
+        (button, at) =>
+          new Promise<void>((resolve) => {
+            window.setTimeout(
+              () => {
+                (button as HTMLButtonElement).click();
+                resolve();
+              },
+              Math.max(0, at - Date.now()),
+            );
+          }),
+        dispatchAt,
+      ),
+    player
+      .getByRole("button", { name: "Move → azure-gate", exact: true })
+      .evaluate(
+        (button, at) =>
+          new Promise<void>((resolve) => {
+            window.setTimeout(
+              () => {
+                (button as HTMLButtonElement).click();
+                resolve();
+              },
+              Math.max(0, at - Date.now()),
+            );
+          }),
+        dispatchAt,
+      ),
+  ]);
+  await expect(page.getByText(/seq 1/)).toBeVisible();
+  await expect(player.getByText(/seq 1/)).toBeVisible();
+  await expect
+    .poll(async () => {
+      const left = await page.getByTestId("game-state-hash").textContent();
+      const right = await player.getByTestId("game-state-hash").textContent();
+      return left === right;
+    })
+    .toBe(true);
+  const statuses = [
+    await page.getByText(/(?:connected|conflict) · designer · seq 1/).count(),
+    await player.getByText(/(?:connected|conflict) · player · seq 1/).count(),
+  ];
+  expect(statuses).toEqual([1, 1]);
+  await playerContext.close();
+});
+
+test("reconnect restores the persistent room tail", async ({ page }) => {
+  await page.goto("/judge");
+  await page.getByRole("button", { name: "Create shared room" }).click();
+  await expect(page.getByText(/connected · designer · seq 0/)).toBeVisible();
+  await page
+    .getByRole("button", { name: "Move → azure-gate", exact: true })
+    .click();
+  await expect(page.getByText(/connected · designer · seq 1/)).toBeVisible();
+  const hash = await page.getByTestId("game-state-hash").textContent();
+
+  await page.reload();
+  await expect(page.getByText(/connected · designer · seq 1/)).toBeVisible();
+  await expect(page.getByTestId("game-state-hash")).toHaveText(hash!);
+});
+
+test("fork from here copies a prefix and leaves the parent live", async ({
+  page,
+  browser,
+}) => {
+  await page.goto("/judge");
+  await page.getByRole("button", { name: "Create shared room" }).click();
+  await expect(page.getByText(/connected · designer · seq 0/)).toBeVisible();
+  const baseHash = await page.getByTestId("game-state-hash").textContent();
+  await page
+    .getByRole("button", { name: "Move → azure-gate", exact: true })
+    .click();
+  await expect(page.getByText(/connected · designer · seq 1/)).toBeVisible();
+  const liveHash = await page.getByTestId("game-state-hash").textContent();
+  expect(liveHash).not.toBe(baseHash);
+
+  await page.getByRole("button", { name: "Previous cell" }).click();
+  await expect(
+    page.getByText(/Timeline 0 \/ 1 · inspecting prefix/),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Fork from here" }).click();
+  const forkUrl = await page
+    .getByRole("link", { name: "Open forked room" })
+    .getAttribute("href");
+  expect(forkUrl).not.toBeNull();
+
+  const forkContext = await browser.newContext();
+  const fork = await forkContext.newPage();
+  await fork.goto(forkUrl!);
+  await expect(fork.getByText(/connected · designer · seq 0/)).toBeVisible();
+  await expect(fork.getByTestId("game-state-hash")).toHaveText(baseHash!);
+
+  await page.getByRole("button", { name: "Return live" }).click();
+  await expect(page.getByTestId("game-state-hash")).toHaveText(liveHash!);
+  await expect(page.getByText(/Timeline 1 \/ 1 · live/)).toBeVisible();
+  await forkContext.close();
+});
+
 async function installMockedAi(page: import("@playwright/test").Page) {
   const source = `Scenario("blue-gate-rotates-linked-room", {
   given: "explorer-enters-blue-gate",

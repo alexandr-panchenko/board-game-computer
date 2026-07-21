@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { connectedRoomIds } from "../../../src/geometry";
 import {
+  applySharedCell,
   createCuratedCheckpoint,
+  decodeCanonicalAction,
   DEFAULT_VAULT_SEED,
   ShiftingVaultsGame,
   type VaultSnapshot,
@@ -69,6 +71,28 @@ describe("Shifting Vaults", () => {
     });
     expect(first.explorers["explorer-mara"]?.hand.length).toBeGreaterThan(0);
     expect(first.zones["mirror-gallery"]?.id).toBe("mirror-gallery");
+  });
+
+  it("decodes and applies canonical shared action source through legal options", () => {
+    const direct = createCuratedCheckpoint();
+    const remote = createCuratedCheckpoint();
+    const option = direct
+      .legalActions("human")
+      .find(
+        (candidate) =>
+          candidate.actionId === "move-explorer" &&
+          candidate.parameters.destinationId === "azure-gate",
+      );
+    expect(option).toBeDefined();
+    const source = direct.runtime.actionSource(option!);
+    expect(decodeCanonicalAction(source)).toEqual({
+      actionId: "move-explorer",
+      actorId: "human",
+      parameters: { destinationId: "azure-gate" },
+    });
+    expect(direct.perform(option!).ok).toBe(true);
+    expect(applySharedCell(remote, { kind: "action", source })?.ok).toBe(true);
+    expect(remote.snapshot().stateHash).toBe(direct.snapshot().stateHash);
   });
 
   it("moves, searches, switches turns, and round-pressures through actions", () => {

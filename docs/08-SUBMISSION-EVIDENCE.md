@@ -221,6 +221,44 @@ not evidence.
 - Production visual evidence:
   `evidence/local/m6-production-live-complete.png` (gitignored local artifact).
 
+## Milestone 7 — Persistent shared rooms and reversible rebase
+
+- Date: 2026-07-21.
+- Durable Object boundary: SQLite stores room metadata, monotonic cells,
+  idempotency keys, head sequence/hash attestations, parent prefix metadata,
+  and only SHA-256 capability hashes. Raw Designer/Player secrets remain URL
+  fragments and in browser session state; they are never rendered or logged.
+- Ordering boundary: executable proposals commit only when `baseSeq` and
+  `baseStateHash` match the current head. Duplicate `commandId` returns its one
+  existing commit; stale proposals return the missing tail and append nothing.
+  Action-kind source is always checked with the restricted Player validator,
+  including for Designer capabilities.
+- Realtime boundary: Hibernatable WebSockets retain joined client/role/sequence
+  attachments, broadcast one global order, serve reconnect tails, and compare
+  state-hash reports. A Worker test evicts the live Durable Object, then proves
+  both its attachment and committed cell remain available.
+- Client boundary: later optimistic transactions remain visible but queued
+  behind one in-flight proposal. Rebase applies pending inverse patches,
+  authoritative cells, then only the short pending tail; execution-count tests
+  prove committed history is not replayed. Irreconcilable actions become a
+  visible conflict, while hash divergence triggers exceptional full-prefix
+  recovery.
+- Timeline/fork: previous, next, and return-live apply retained patches.
+  **Fork from here** copies only the selected canonical prefix into a separately
+  capable child Durable Object and leaves the parent head unchanged.
+- Exact M7 command matrix passed: 5 rebase unit checks, 5 room Worker checks,
+  4 two-client desktop/mobile checks, 2 reconnect checks, and 2 fork checks.
+  Concurrent same-entity proposals commit one global winner, reject the stale
+  base, and converge both clients to the same hash.
+- Full `bun run validate` passed 49 unit tests, 13 Worker tests, and 32
+  Playwright checks across desktop/mobile, followed by production build,
+  107-file-plus-build-output secret scan, and 27-direct-dependency license scan.
+- Local visual review passed at `evidence/local/m7-shared-desktop.png` and
+  `evidence/local/m7-shared-mobile.png` (gitignored local artifacts); neither
+  image contains a capability secret.
+- Production implementation commit, CI run, exact-version verification,
+  two-browser convergence, reload, and fork URLs: pending deployment.
+
 ## Requirements and judging evidence
 
 | Status | Requirement / criterion | Claim to verify | Exact evidence required | URL/file/video timestamp | Verification method |

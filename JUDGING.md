@@ -46,6 +46,20 @@ Press **Use labelled example rule**. The application inserts a clearly marked
 prewritten cell into the same validator and interpreter. This fallback is not
 presented as a live GPT-5.6 response.
 
+## Optional persistent two-browser proof
+
+1. Return to the demo checkpoint and press **Create shared room**.
+2. Confirm **Connected · Designer · Seq 0 · Converged**, then open **Open
+   Player link** in a second browser context. The secret remains in the URL
+   fragment and is removed from the visible address after joining.
+3. Perform **Move → azure-gate** in either browser. Confirm both show sequence
+   1 and the same game-state hash.
+4. Reload one browser and confirm it reconnects at sequence 1 without losing
+   the room.
+5. Press **Previous cell**, then **Fork from here**. Open the fork and confirm
+   it starts at the selected prefix while **Return live** restores the unchanged
+   parent.
+
 ## Release
 
 - Submission commit: `<commit-sha>`

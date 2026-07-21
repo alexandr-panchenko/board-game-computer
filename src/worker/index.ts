@@ -3,6 +3,13 @@ import {
   PlayerRequestSchema,
   type DesignerStreamEvent,
 } from "../shared/ai";
+import {
+  CreateRoomRequestSchema,
+  ForkRoomRequestSchema,
+  type CommittedCell,
+  type RoomCreation,
+  type RoomSnapshot,
+} from "../shared/room";
 import { readAiConfig } from "./ai/config";
 import { OpenAiGateway, type AiGateway } from "./ai/gateway";
 import {
@@ -11,6 +18,7 @@ import {
   generateDesignerCandidate,
 } from "./ai/service";
 import type { Env } from "./env";
+import { hashCapability } from "./room-object";
 
 export type { Env } from "./env";
 
@@ -68,6 +76,34 @@ const worker = {
       return handlePlayerRequest(request, env);
     }
 
+    if (url.pathname === "/api/rooms" && request.method === "POST") {
+      return handleCreateRoom(request, env);
+    }
+
+    const roomRoute = matchRoomRoute(url.pathname);
+    if (roomRoute !== null) {
+      const room = env.ROOMS.getByName(roomRoute.roomId);
+      if (roomRoute.operation === "socket") {
+        const origin = request.headers.get("origin");
+        if (origin !== null && origin !== url.origin)
+          return json({ error: "origin_denied" }, 403);
+        return room.fetch(new Request("https://room.internal/socket", request));
+      }
+      if (roomRoute.operation === "snapshot" && request.method === "GET") {
+        return room.fetch(
+          new Request(`https://room.internal/snapshot${url.search}`, request),
+        );
+      }
+      if (roomRoute.operation === "propose" && request.method === "POST") {
+        return room.fetch(
+          new Request("https://room.internal/propose", request),
+        );
+      }
+      if (roomRoute.operation === "fork" && request.method === "POST") {
+        return handleForkRoom(request, env, roomRoute.roomId);
+      }
+    }
+
     if (url.pathname.startsWith("/api/")) {
       return json({ error: "not_found" }, 404);
     }
@@ -80,6 +116,118 @@ export default worker;
 
 export { RoomObject } from "./room-object";
 export { BudgetObject } from "./budget-object";
+
+async function handleCreateRoom(request: Request, env: Env): Promise<Response> {
+  const parsed = CreateRoomRequestSchema.safeParse(await safeJson(request));
+  if (!parsed.success)
+    return json({ error: "invalid_request", issues: parsed.error.issues }, 400);
+  const roomId = crypto.randomUUID();
+  return createRoom(env, new URL(request.url).origin, roomId, parsed.data);
+}
+
+async function createRoom(
+  env: Env,
+  origin: string,
+  roomId: string,
+  input: {
+    templateId: string;
+    initialStateHash: string;
+    parentRoomId?: string;
+    parentSeq?: number;
+    cells?: CommittedCell[];
+  },
+): Promise<Response> {
+  const designerCapability = randomSecret();
+  const playerCapability = randomSecret();
+  const room = env.ROOMS.getByName(roomId);
+  const initialized = await room.fetch(
+    new Request("https://room.internal/internal/initialize", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        roomId,
+        ...input,
+        designerCapabilityHash: await hashCapability(designerCapability),
+        playerCapabilityHash: await hashCapability(playerCapability),
+      }),
+    }),
+  );
+  if (!initialized.ok)
+    return json({ error: "room_initialization_failed" }, 500);
+  const snapshot: RoomSnapshot = await initialized.json();
+  const base = `${origin}/room/${roomId}`;
+  const creation: RoomCreation = {
+    roomId,
+    designerUrl: `${base}#designer=${designerCapability}`,
+    playerUrl: `${base}#player=${playerCapability}`,
+    snapshot,
+  };
+  return json(creation, 201);
+}
+
+async function handleForkRoom(
+  request: Request,
+  env: Env,
+  parentRoomId: string,
+): Promise<Response> {
+  const parsed = ForkRoomRequestSchema.safeParse(await safeJson(request));
+  if (!parsed.success)
+    return json({ error: "invalid_request", issues: parsed.error.issues }, 400);
+  const parent = env.ROOMS.getByName(parentRoomId);
+  const snapshotResponse = await parent.fetch(
+    new Request("https://room.internal/snapshot?afterSeq=0", {
+      headers: {
+        "x-room-capability": request.headers.get("x-room-capability") ?? "",
+      },
+    }),
+  );
+  if (!snapshotResponse.ok)
+    return json({ error: "unauthorized" }, snapshotResponse.status);
+  const snapshot: RoomSnapshot = await snapshotResponse.json();
+  if (parsed.data.seq > snapshot.headSeq)
+    return json({ error: "invalid_prefix" }, 400);
+  const cells = snapshot.cells
+    .filter((cell) => cell.seq <= parsed.data.seq)
+    .map((cell) => ({ ...cell }));
+  const initialStateHash =
+    parsed.data.seq === 0
+      ? (snapshot.cells[0]?.baseStateHash ?? snapshot.headStateHash)
+      : (cells.at(-1)?.canonicalPostStateHash ?? snapshot.headStateHash);
+  const childRoomId = crypto.randomUUID();
+  const childCells = cells.map((cell) => ({ ...cell, roomId: childRoomId }));
+  return createRoom(env, new URL(request.url).origin, childRoomId, {
+    templateId: snapshot.templateId,
+    initialStateHash,
+    parentRoomId,
+    parentSeq: parsed.data.seq,
+    cells: childCells,
+  });
+}
+
+function randomSecret(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary)
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/=+$/, "");
+}
+
+function matchRoomRoute(pathname: string): {
+  roomId: string;
+  operation: "snapshot" | "propose" | "socket" | "fork";
+} | null {
+  const match =
+    /^\/api\/rooms\/([A-Za-z0-9._:-]+)\/(snapshot|propose|socket|fork)$/.exec(
+      pathname,
+    );
+  if (match === null) return null;
+  return {
+    roomId: match[1]!,
+    operation: match[2] as "snapshot" | "propose" | "socket" | "fork",
+  };
+}
 
 export async function handleDesignerRequest(
   request: Request,

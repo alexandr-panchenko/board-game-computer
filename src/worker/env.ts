@@ -6,9 +6,14 @@ export interface WorkerNamespace {
   getByName(name: string): WorkerFetcher;
 }
 
+export interface RoomNamespace extends WorkerNamespace {
+  idFromName(name: string): DurableObjectId;
+  get(id: DurableObjectId): DurableObjectStub;
+}
+
 export interface Env {
   ASSETS: WorkerFetcher;
-  ROOMS: WorkerNamespace;
+  ROOMS: RoomNamespace;
   AI_BUDGET: WorkerNamespace;
   OPENAI_API_KEY?: string;
   AI_ENABLED?: string;

@@ -67,4 +67,62 @@ describe("pending-tail rebase", () => {
     );
     expect(sync.pendingState()).toEqual([]);
   });
+
+  it("rebases three pending cells without replaying committed history", () => {
+    const sync = new RebaseRuntime();
+    succeed(
+      sync.runtime.executeCell("let value = 0; let remote = 0;", {
+        recordHistory: false,
+      }),
+    );
+    sync.initializeConfirmed(7, sync.runtime.hash());
+    succeed(sync.propose("A", "value += 1;"));
+    succeed(sync.propose("B", "value += 2;"));
+    succeed(sync.propose("C", "value += 3;"));
+    const executionsBefore = sync.runtime.executionCount;
+
+    const result = sync.receiveAuthoritative(
+      "remote",
+      "remote += 1;",
+      8,
+      "server-attestation",
+    );
+    expect(result.reapplied).toEqual(["A", "B", "C"]);
+    expect(sync.runtime.executionCount - executionsBefore).toBe(4);
+    expect(sync.nextProposal()).toEqual({
+      commandId: "A",
+      source: "value += 1;",
+      baseSeq: 8,
+      baseStateHash: "server-attestation",
+    });
+  });
+
+  it("moves through loaded history using patches and returns live", () => {
+    const sync = new RebaseRuntime();
+    succeed(
+      sync.runtime.executeCell("let value = 0;", { recordHistory: false }),
+    );
+    sync.initializeConfirmed(0, sync.runtime.hash());
+    succeed(sync.propose("A", "value += 1;"));
+    sync.accept("A", 1, sync.runtime.hash());
+    succeed(sync.propose("B", "value += 2;"));
+    sync.accept("B", 2, sync.runtime.hash());
+    const liveHash = sync.runtime.hash();
+
+    expect(sync.previous()).toBe(true);
+    expect(sync.timelineState()).toMatchObject({
+      cursor: 1,
+      length: 2,
+      live: false,
+    });
+    expect(sync.previous()).toBe(true);
+    expect(sync.next()).toBe(true);
+    sync.returnLive();
+    expect(sync.runtime.hash()).toBe(liveHash);
+    expect(sync.timelineState()).toMatchObject({
+      cursor: 2,
+      length: 2,
+      live: true,
+    });
+  });
 });
