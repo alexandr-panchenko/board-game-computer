@@ -113,7 +113,17 @@ not evidence.
   legal move cell, exact game undo/redo, Reset, and Fresh copy.
 - Local visual evidence: `evidence/local/m4-desktop-gameplay.png` and
   `evidence/local/m4-mobile-gameplay.png` (gitignored local artifacts).
-- Implementation commit: `<pending implementation commit>`.
+- Implementation commit: `e5732aab6454c13994c6324c4734ca0739b3703c`
+  (pushed to `origin/main`).
+- GitHub Actions run:
+  `https://github.com/alexandr-panchenko/board-game-computer/actions/runs/29804977568`;
+  both `validate` and `deploy` jobs completed successfully.
+- Production `/api/version` reported commit
+  `e5732aab6454c13994c6324c4734ca0739b3703c`; `/api/health` and
+  `/api/room-health` passed, and `/judge` returned HTTP 200.
+- Production Playwright passed six desktop/mobile checks covering the public
+  shell, a complete deterministic explorer victory, and touch-sized semantic
+  game controls.
 
 ## Requirements and judging evidence
 

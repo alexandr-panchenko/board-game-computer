@@ -7,8 +7,8 @@
 - User API key: not required
 - Best path: desktop or mobile modern browser
 
-Current implementation status: M4 is locally validated and awaiting its
-milestone deployment. The deterministic path below works; live GPT-5.6 rule
+Current implementation status: M4 is deployed and production-verified. The
+deterministic path below works; live GPT-5.6 rule
 authoring and shared-room persistence are not yet available.
 
 ## Current deterministic path
