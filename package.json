@@ -18,7 +18,8 @@
     "deploy": "bun run build && wrangler deploy",
     "secrets:check": "bun scripts/check-secrets.ts",
     "licenses:check": "bun scripts/check-licenses.ts",
-    "test:ai:live": "bun scripts/live-ai-smoke.ts"
+    "test:ai:live": "bun scripts/live-ai-smoke.ts",
+    "smoke:production": "bun scripts/production-smoke.ts"
   },
   "dependencies": {
     "acorn": "^8.17.0",

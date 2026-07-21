@@ -5,6 +5,7 @@ import {
   applySharedCell,
   createCuratedCheckpoint,
   decodeCanonicalAction,
+  rebuildSharedRoom,
   DEFAULT_VAULT_SEED,
   ShiftingVaultsGame,
   type VaultSnapshot,
@@ -93,6 +94,43 @@ describe("Shifting Vaults", () => {
     expect(direct.perform(option!).ok).toBe(true);
     expect(applySharedCell(remote, { kind: "action", source })?.ok).toBe(true);
     expect(remote.snapshot().stateHash).toBe(direct.snapshot().stateHash);
+  });
+
+  it("rebuilds divergence recovery from canonical source and detects corruption", () => {
+    const game = createCuratedCheckpoint();
+    const option = game
+      .legalActions("human")
+      .find(
+        (candidate) =>
+          candidate.actionId === "move-explorer" &&
+          candidate.parameters.destinationId === "azure-gate",
+      );
+    expect(option).toBeDefined();
+    const source = game.runtime.actionSource(option!);
+    const baseStateHash = game.snapshot().stateHash;
+    expect(game.perform(option!).ok).toBe(true);
+    const canonicalPostStateHash = game.snapshot().stateHash;
+    const cell = {
+      commandId: "recovery-cell",
+      roomId: "recovery-room",
+      baseSeq: 0,
+      baseStateHash,
+      kind: "action" as const,
+      source,
+      author: { clientId: "recovery-client", role: "designer" as const },
+      clientLanguageVersion: "board-game-computer-js-0.1" as const,
+      clientFrameworkVersion: "board-game-computer-framework-0.1" as const,
+      proposedPostStateHash: canonicalPostStateHash,
+      seq: 1,
+      committedAt: "2026-07-21T00:00:00.000Z",
+      canonicalPostStateHash,
+    };
+    const rebuilt = rebuildSharedRoom([cell], canonicalPostStateHash);
+    expect(rebuilt.game.snapshot().stateHash).toBe(canonicalPostStateHash);
+    expect(rebuilt.patches).toHaveLength(1);
+    expect(() => rebuildSharedRoom([cell], "corrupt-cache-hash")).toThrow(
+      /differs from the canonical attestation/,
+    );
   });
 
   it("moves, searches, switches turns, and round-pressures through actions", () => {

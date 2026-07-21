@@ -6,15 +6,51 @@ import type {
   FrameworkData,
   FrameworkResult,
   LegalActionOption,
+  RuntimePatch,
 } from "../../runtime";
 import type { CommittedCell } from "../../shared/room";
 import { validateDesignerCandidate } from "./designer";
 import type { ShiftingVaultsGame } from "./game";
+import { createCuratedCheckpoint } from "./checkpoint";
 
 export interface CanonicalAction {
   actionId: string;
   actorId: string;
   parameters: Record<string, FrameworkData>;
+}
+
+export interface RebuiltSharedRoom {
+  game: ShiftingVaultsGame;
+  patches: Array<{
+    cell: CommittedCell;
+    patch: { forward: RuntimePatch; inverse: RuntimePatch } | null;
+  }>;
+}
+
+export function rebuildSharedRoom(
+  cells: CommittedCell[],
+  expectedHash: string,
+): RebuiltSharedRoom {
+  const game = createCuratedCheckpoint();
+  const patches = cells.map((cell) => {
+    const result = applySharedCell(game, cell);
+    if (result !== null && !result.ok) throw new Error(result.failure.message);
+    return {
+      cell,
+      patch:
+        result === null
+          ? null
+          : {
+              forward: result.commit.transaction.forward,
+              inverse: result.commit.transaction.inverse,
+            },
+    };
+  });
+  if (game.snapshot().stateHash !== expectedHash)
+    throw new Error(
+      "Rebuilt state still differs from the canonical attestation",
+    );
+  return { game, patches };
 }
 
 export function decodeCanonicalAction(source: string): CanonicalAction {

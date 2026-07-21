@@ -2,6 +2,7 @@ import type { RuntimePatch } from "../runtime";
 import {
   applySharedCell,
   createCuratedCheckpoint,
+  rebuildSharedRoom,
   resolveCanonicalAction,
   validateDesignerCandidate,
   type ShiftingVaultsGame,
@@ -497,17 +498,12 @@ export class SharedRoomClient {
       );
       if (!response.ok) throw new Error("Authoritative snapshot unavailable");
       const snapshot: RoomSnapshot = await response.json();
-      this.game = createCuratedCheckpoint();
-      this.timeline = [];
-      this.timelineCursor = 0;
-      this.confirmedSeq = 0;
-      this.confirmedHash = this.game.snapshot().stateHash;
-      for (const cell of snapshot.cells) this.applyAuthoritative(cell);
-      const rebuiltHash = this.game.snapshot().stateHash;
-      if (rebuiltHash !== snapshot.headStateHash)
-        throw new Error(
-          "Rebuilt state still differs from the canonical attestation",
-        );
+      const rebuilt = rebuildSharedRoom(snapshot.cells, snapshot.headStateHash);
+      this.game = rebuilt.game;
+      this.timeline = rebuilt.patches;
+      this.timelineCursor = this.timeline.length;
+      this.confirmedSeq = snapshot.headSeq;
+      this.confirmedHash = snapshot.headStateHash;
       this.connection = "connected";
       this.notify(
         "Divergence recovery rebuilt the authoritative room exactly.",

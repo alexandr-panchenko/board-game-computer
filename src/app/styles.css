@@ -29,6 +29,23 @@ button:focus-visible {
 button:disabled {
   opacity: 0.55;
 }
+.fatal-recovery {
+  max-width: 640px;
+  margin: 12vh auto;
+  padding: 28px;
+  border: 1px solid #577061;
+  border-radius: 14px;
+  background: #111b26;
+}
+.fatal-recovery div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.fatal-recovery a {
+  color: #75d7b4;
+}
 .app-shell {
   min-height: 100vh;
   display: grid;

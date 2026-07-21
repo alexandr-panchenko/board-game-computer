@@ -8,6 +8,12 @@
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
   },
+  "routes": [
+    {
+      "pattern": "boardgamecomputer.com",
+      "custom_domain": true,
+    },
+  ],
   "durable_objects": {
     "bindings": [
       {
@@ -38,12 +44,18 @@
     "AI_MAX_ESTIMATED_INPUT_TOKENS_PER_DAY": "250000",
     "AI_MAX_REQUESTS_PER_ROOM_PER_HOUR": "20",
     "AI_REQUEST_TIMEOUT_MS": "20000",
+    "ROOM_MAX_CELL_BYTES": "32768",
+    "ROOM_MAX_CELLS": "2000",
+    "ROOM_MAX_CONNECTIONS": "16",
+    "ROOM_COMMANDS_PER_MINUTE": "120",
+    "ROOM_MAX_CHAT_MESSAGE_BYTES": "8192",
   },
   "observability": {
     "enabled": true,
   },
   "env": {
     "test": {
+      "routes": [],
       "durable_objects": {
         "bindings": [
           {
@@ -64,6 +76,11 @@
         "AI_MAX_ESTIMATED_INPUT_TOKENS_PER_DAY": "250000",
         "AI_MAX_REQUESTS_PER_ROOM_PER_HOUR": "20",
         "AI_REQUEST_TIMEOUT_MS": "20000",
+        "ROOM_MAX_CELL_BYTES": "2048",
+        "ROOM_MAX_CELLS": "3",
+        "ROOM_MAX_CONNECTIONS": "2",
+        "ROOM_COMMANDS_PER_MINUTE": "2",
+        "ROOM_MAX_CHAT_MESSAGE_BYTES": "8192",
       },
     },
   },

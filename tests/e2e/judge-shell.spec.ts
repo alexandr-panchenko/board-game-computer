@@ -505,6 +505,79 @@ test("fork from here copies a prefix and leaves the parent live", async ({
   await forkContext.close();
 });
 
+test("AI cancellation leaves explicit retry and fallback controls", async ({
+  page,
+}) => {
+  await page.route("**/api/ai/designer", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 3_000));
+    await route.fulfill({ status: 503, body: "disabled" });
+  });
+  await page.goto("/judge");
+  await page.getByRole("button", { name: "Ask GPT-5.6 Designer" }).click();
+  await expect(
+    page.getByRole("button", { name: "Cancel Designer request" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Cancel Designer request" })
+    .evaluate((button: HTMLButtonElement) => button.click());
+  await expect(page.getByText(/Designer request cancelled/)).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Retry GPT-5.6 Designer" }),
+  ).toBeVisible();
+
+  await page.route("**/api/ai/player", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 3_000));
+    await route.fulfill({ status: 503, body: "disabled" });
+  });
+  await page.getByRole("button", { name: "Take control now" }).click();
+  await page
+    .getByRole("button", { name: "Move → azure-gate", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Ask GPT-5.6 Luna for Ivo move" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Cancel Luna request" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Cancel Luna request" })
+    .evaluate((button: HTMLButtonElement) => button.click());
+  await expect(page.getByText(/Luna request cancelled/)).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Run Ivo fallback turn" }),
+  ).toBeVisible();
+});
+
+test("clean browser completes fallback path without console-breaking errors", async ({
+  page,
+}) => {
+  const consoleErrors: string[] = [];
+  const pageErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.goto("/judge");
+  await page.getByRole("button", { name: "Take control now" }).click();
+  await page
+    .getByRole("button", { name: "Move → azure-gate", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Run Ivo fallback turn" }).click();
+  await page.getByRole("button", { name: "Use labelled example rule" }).click();
+  await page
+    .getByRole("button", {
+      name: "Move → clockwork-archive",
+      exact: true,
+    })
+    .click();
+  await page
+    .getByRole("button", { name: "Move → azure-gate", exact: true })
+    .click();
+  await expect(page.getByText("Hero path complete")).toBeVisible();
+  expect(consoleErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
+});
+
 async function installMockedAi(page: import("@playwright/test").Page) {
   const source = `Scenario("blue-gate-rotates-linked-room", {
   given: "explorer-enters-blue-gate",

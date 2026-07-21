@@ -22,14 +22,25 @@ import { hashCapability } from "./room-object";
 
 export type { Env } from "./env";
 
+const SECURITY_HEADERS: Readonly<Record<string, string>> = {
+  "content-security-policy":
+    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:",
+  "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=()",
+  "referrer-policy": "no-referrer",
+  "strict-transport-security": "max-age=31536000; includeSubDomains",
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+};
+
 const json = (value: unknown, status = 200): Response =>
-  Response.json(value, {
-    status,
-    headers: {
-      "cache-control": "no-store",
-      "x-content-type-options": "nosniff",
-    },
-  });
+  withSecurity(
+    Response.json(value, {
+      status,
+      headers: {
+        "cache-control": "no-store",
+      },
+    }),
+  );
 
 const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -55,7 +66,9 @@ const worker = {
 
     if (url.pathname === "/api/room-health") {
       const room = env.ROOMS.getByName("vertical-slice-health");
-      return room.fetch(new Request("https://room.internal/health"));
+      return withSecurity(
+        await room.fetch(new Request("https://room.internal/health")),
+      );
     }
 
     if (url.pathname === "/api/ai/status") {
@@ -90,13 +103,17 @@ const worker = {
         return room.fetch(new Request("https://room.internal/socket", request));
       }
       if (roomRoute.operation === "snapshot" && request.method === "GET") {
-        return room.fetch(
-          new Request(`https://room.internal/snapshot${url.search}`, request),
+        return withSecurity(
+          await room.fetch(
+            new Request(`https://room.internal/snapshot${url.search}`, request),
+          ),
         );
       }
       if (roomRoute.operation === "propose" && request.method === "POST") {
-        return room.fetch(
-          new Request("https://room.internal/propose", request),
+        return withSecurity(
+          await room.fetch(
+            new Request("https://room.internal/propose", request),
+          ),
         );
       }
       if (roomRoute.operation === "fork" && request.method === "POST") {
@@ -108,7 +125,7 @@ const worker = {
       return json({ error: "not_found" }, 404);
     }
 
-    return env.ASSETS.fetch(request);
+    return withSecurity(await env.ASSETS.fetch(request));
   },
 };
 
@@ -229,6 +246,17 @@ function matchRoomRoute(pathname: string): {
   };
 }
 
+function withSecurity(response: Response): Response {
+  const headers = new Headers(response.headers);
+  for (const [name, value] of Object.entries(SECURITY_HEADERS))
+    headers.set(name, value);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export async function handleDesignerRequest(
   request: Request,
   env: Env,
@@ -284,7 +312,7 @@ export async function handleDesignerRequest(
       "content-type": "text/event-stream; charset=utf-8",
       "cache-control": "no-store",
       connection: "keep-alive",
-      "x-content-type-options": "nosniff",
+      ...SECURITY_HEADERS,
     },
   });
 }

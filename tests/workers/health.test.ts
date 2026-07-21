@@ -11,6 +11,11 @@ describe("deployed vertical slice", () => {
     );
 
     expect(health.status).toBe(200);
+    expect(health.headers.get("content-security-policy")).toContain(
+      "frame-ancestors 'none'",
+    );
+    expect(health.headers.get("referrer-policy")).toBe("no-referrer");
+    expect(health.headers.get("x-frame-options")).toBe("DENY");
     await expect(health.json()).resolves.toMatchObject({
       ok: true,
       service: "board-game-computer",

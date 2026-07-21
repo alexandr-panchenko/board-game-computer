@@ -12,17 +12,18 @@ Last design review: **2026-07-21**
 | M5 — GPT-5.6 integration | complete | Local/live validation, production desktop/mobile paths, and GitHub Actions validate/deploy passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve validated AI and fallback behavior in the hero flow | `aab81ed` |
 | M6 — Complete hero/judge flow | complete | Local validation, CI, exact production version, live AI path, and deployed desktop/mobile checks passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve the literal judge path while adding persistence | `405fe3a` |
 | M7 — Persistent shared rooms and rebase | complete | Local validation, CI, exact production version, two-browser convergence/reload/fork passed 2026-07-21 | None known beyond the existing bundle warning | Preserve ordering and capability boundaries during hardening | `d9ebcda` |
-| M8 — Reliability, mobile, security, and production verification | in progress | M7 production gate passed | Production custom-domain readiness still to verify | Complete fallbacks, budgets, headers, clean-browser/mobile QA | — |
+| M8 — Reliability, mobile, security, and production verification | in progress | Full local M8 matrix passed 2026-07-21: 50 unit, 14 Worker, 36 E2E, 18 mobile-only, build/secrets/licenses | Production promotion, custom-domain smoke, and rollback exercise remain | Commit, deploy, verify both URLs, roll back, then restore | — |
 | M9 — Evidence and release freeze | not started | — | No real evidence yet | Fill evidence, record video, tag release, submit | — |
 
 ## Current gate
 
-**M8 IN PROGRESS.** M7 commit `d9ebcda` passed local validation and GitHub
-Actions validation/deployment; production reports the exact commit. A real
-Designer desktop and Player mobile context converged at sequence 1 and the same
-hash, Player reload recovered the tail, and a prefix fork left the parent
-unchanged. The active gate is reliability, security headers/limits, mobile and
-clean-browser QA, custom-domain readiness, and production verification.
+**M8 IN PROGRESS.** The local hardening matrix is green: cancellation/retry and
+fatal recovery UI, canonical divergence reconstruction, security headers,
+protocol/rate/room/connection limits, exact deployment smoke tooling, 50 unit
+tests, 14 Worker tests, 36 full E2E checks with AI disabled, and an additional
+18-check mobile run. Secret and license scans pass. The remaining gate is to
+promote the exact commit, verify workers.dev and `boardgamecomputer.com` in
+clean browsers, exercise rollback to M7, and restore the verified M8 version.
 
 ## Cut line
 

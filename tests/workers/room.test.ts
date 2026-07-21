@@ -251,6 +251,126 @@ describe("persistent room protocol", () => {
     });
     socket.close(1000, "test complete");
   });
+
+  it("enforces cell, command-rate, room, connection, and origin limits", async () => {
+    const oversizedRoom = await createRoom("base-hash");
+    const oversizedCapability = capabilityFrom(
+      oversizedRoom.designerUrl,
+      "designer",
+    );
+    const oversized = {
+      ...proposal(oversizedRoom.roomId, "oversized", "designer", {
+        baseSeq: 0,
+        baseStateHash: "base-hash",
+        proposedPostStateHash: "oversized-hash",
+      }),
+      metadata: { padding: "x".repeat(2_048) },
+    };
+    expect(
+      await propose(oversizedRoom.roomId, oversizedCapability, oversized),
+    ).toMatchObject({ type: "cell.rejected", code: "cell_too_large" });
+
+    const rateRoom = await createRoom("rate-base");
+    const rateCapability = capabilityFrom(rateRoom.designerUrl, "designer");
+    for (const [index, base, post] of [
+      [1, "rate-base", "rate-one"],
+      [2, "rate-one", "rate-two"],
+    ] as const) {
+      expect(
+        await propose(
+          rateRoom.roomId,
+          rateCapability,
+          proposal(rateRoom.roomId, `rate-${String(index)}`, "designer", {
+            baseSeq: index - 1,
+            baseStateHash: base,
+            proposedPostStateHash: post,
+          }),
+        ),
+      ).toMatchObject({ type: "cell.committed" });
+    }
+    expect(
+      await propose(
+        rateRoom.roomId,
+        rateCapability,
+        proposal(rateRoom.roomId, "rate-three", "designer", {
+          baseSeq: 2,
+          baseStateHash: "rate-two",
+          proposedPostStateHash: "rate-three",
+        }),
+      ),
+    ).toMatchObject({ type: "cell.rejected", code: "command_rate_limit" });
+
+    const fullRoom = await createRoom("full-base");
+    const fullCapability = capabilityFrom(fullRoom.designerUrl, "designer");
+    let fullBase = "full-base";
+    for (let index = 1; index <= 3; index += 1) {
+      const postHash = `full-${String(index)}`;
+      const cell = proposal(
+        fullRoom.roomId,
+        `full-${String(index)}`,
+        "designer",
+        {
+          baseSeq: index - 1,
+          baseStateHash: fullBase,
+          proposedPostStateHash: postHash,
+        },
+      );
+      cell.author.clientId = `full-client-${String(index)}`;
+      expect(
+        await propose(fullRoom.roomId, fullCapability, cell),
+      ).toMatchObject({
+        type: "cell.committed",
+      });
+      fullBase = postHash;
+    }
+    const beyondLimit = proposal(fullRoom.roomId, "full-four", "designer", {
+      baseSeq: 3,
+      baseStateHash: fullBase,
+      proposedPostStateHash: "full-four",
+    });
+    beyondLimit.author.clientId = "full-client-four";
+    expect(
+      await propose(fullRoom.roomId, fullCapability, beyondLimit),
+    ).toMatchObject({ type: "cell.rejected", code: "room_cell_limit" });
+
+    const originDenied = await exports.default.fetch(
+      new Request(`${origin}/api/rooms/${rateRoom.roomId}/socket`, {
+        headers: { Upgrade: "websocket", Origin: "https://evil.test" },
+      }),
+    );
+    expect(originDenied.status).toBe(403);
+
+    const connectionRoom = await createRoom("connection-base");
+    const stub = env.ROOMS.get(env.ROOMS.idFromName(connectionRoom.roomId));
+    const sockets: WebSocket[] = [];
+    for (let index = 0; index < 2; index += 1) {
+      const response = await stub.fetch(
+        new Request("https://room.internal/socket", {
+          headers: { Upgrade: "websocket" },
+        }),
+      );
+      expect(response.status).toBe(101);
+      if (response.webSocket === null) throw new Error("Missing WebSocket");
+      response.webSocket.accept();
+      sockets.push(response.webSocket);
+    }
+    const limited = await stub.fetch(
+      new Request("https://room.internal/socket", {
+        headers: { Upgrade: "websocket" },
+      }),
+    );
+    expect(limited.status).toBe(429);
+    sockets.forEach((socket) => socket.close(1000, "limit test complete"));
+
+    const malformed = await exports.default.fetch(
+      new Request(`${origin}/api/rooms`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "not-json",
+      }),
+    );
+    expect(malformed.status).toBe(400);
+  });
 });
 
 async function createRoom(initialStateHash: string): Promise<RoomCreation> {

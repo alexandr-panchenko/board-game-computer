@@ -64,6 +64,14 @@ interface InitializeRequest {
   cells?: CommittedCell[];
 }
 
+interface RoomLimits {
+  maxCellBytes: number;
+  maxCells: number;
+  maxConnections: number;
+  commandsPerMinute: number;
+  maxChatBytes: number;
+}
+
 const json = (value: unknown, status = 200): Response =>
   Response.json(value, {
     status,
@@ -84,8 +92,17 @@ export async function hashCapability(capability: string): Promise<string> {
 }
 
 export class RoomObject extends DurableObject<Env> {
+  private readonly limits: RoomLimits;
+
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
+    this.limits = {
+      maxCellBytes: positiveInt(env.ROOM_MAX_CELL_BYTES, 32_768),
+      maxCells: positiveInt(env.ROOM_MAX_CELLS, 2_000),
+      maxConnections: positiveInt(env.ROOM_MAX_CONNECTIONS, 16),
+      commandsPerMinute: positiveInt(env.ROOM_COMMANDS_PER_MINUTE, 120),
+      maxChatBytes: positiveInt(env.ROOM_MAX_CHAT_MESSAGE_BYTES, 8_192),
+    };
     this.ctx.storage.sql.exec(`
       CREATE TABLE IF NOT EXISTS room_health (
         id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -121,6 +138,12 @@ export class RoomObject extends DurableObject<Env> {
         role TEXT NOT NULL,
         revoked_at TEXT
       );
+      CREATE TABLE IF NOT EXISTS command_rate (
+        client_id TEXT NOT NULL,
+        minute TEXT NOT NULL,
+        commands INTEGER NOT NULL,
+        PRIMARY KEY (client_id, minute)
+      );
     `);
     this.ctx.storage.sql.exec(
       "INSERT OR IGNORE INTO room_health (id, initialized_at) VALUES (1, datetime('now'))",
@@ -149,6 +172,14 @@ export class RoomObject extends DurableObject<Env> {
   }
 
   async webSocketMessage(socket: WebSocket, message: string | ArrayBuffer) {
+    const messageBytes =
+      typeof message === "string"
+        ? new TextEncoder().encode(message).byteLength
+        : message.byteLength;
+    if (messageBytes > 96_000) {
+      this.send(socket, { type: "room.error", code: "message_too_large" });
+      return;
+    }
     let raw: unknown;
     try {
       raw = JSON.parse(
@@ -306,6 +337,8 @@ export class RoomObject extends DurableObject<Env> {
   private openSocket(request: Request): Response {
     if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket")
       return json({ error: "upgrade_required" }, 426);
+    if (this.ctx.getWebSockets().length >= this.limits.maxConnections)
+      return json({ error: "connection_limit" }, 429);
     const pair = new WebSocketPair();
     const client = pair[0];
     const server = pair[1];
@@ -343,6 +376,21 @@ export class RoomObject extends DurableObject<Env> {
     const existing = this.cellByCommandId(proposal.commandId);
     if (existing !== undefined)
       return { type: "cell.committed", cell: existing, idempotent: true };
+    if (
+      new TextEncoder().encode(JSON.stringify(proposal)).byteLength >
+      this.limits.maxCellBytes
+    )
+      return { type: "cell.rejected", code: "cell_too_large" };
+    if (
+      proposal.chatText !== undefined &&
+      new TextEncoder().encode(proposal.chatText).byteLength >
+        this.limits.maxChatBytes
+    )
+      return { type: "cell.rejected", code: "chat_too_large" };
+    if (room.head_seq >= this.limits.maxCells)
+      return { type: "cell.rejected", code: "room_cell_limit" };
+    if (!this.reserveCommand(proposal.author.clientId))
+      return { type: "cell.rejected", code: "command_rate_limit" };
     if (
       proposal.baseSeq !== room.head_seq ||
       proposal.baseStateHash !== room.head_state_hash
@@ -417,6 +465,29 @@ export class RoomObject extends DurableObject<Env> {
       );
     });
     return cell;
+  }
+
+  private reserveCommand(clientId: string): boolean {
+    const minute = new Date().toISOString().slice(0, 16);
+    this.ctx.storage.sql.exec(
+      "INSERT OR IGNORE INTO command_rate VALUES (?, ?, 0)",
+      clientId,
+      minute,
+    );
+    const row = this.ctx.storage.sql
+      .exec<{ commands: number }>(
+        "SELECT commands FROM command_rate WHERE client_id = ? AND minute = ?",
+        clientId,
+        minute,
+      )
+      .one();
+    if (row.commands >= this.limits.commandsPerMinute) return false;
+    this.ctx.storage.sql.exec(
+      "UPDATE command_rate SET commands = commands + 1 WHERE client_id = ? AND minute = ?",
+      clientId,
+      minute,
+    );
+    return true;
   }
 
   private insertCell(cell: CommittedCell): void {
@@ -516,4 +587,10 @@ function rowToCell(row: CellRow, roomId: string): CommittedCell {
       ? {}
       : { canonicalPostStateHash: row.post_state_hash }),
   };
+}
+
+function positiveInt(value: string | undefined, fallback: number): number {
+  if (value === undefined) return fallback;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
 }

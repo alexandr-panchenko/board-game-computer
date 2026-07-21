@@ -38,6 +38,10 @@ export function App() {
     "Whenever an explorer enters a blue gate, rotate the connected room clockwise.",
   );
   const [designerBusy, setDesignerBusy] = useState(false);
+  const [designerRetry, setDesignerRetry] = useState(false);
+  const designerAbortRef = useRef<AbortController | null>(null);
+  const [aiPlayerBusy, setAiPlayerBusy] = useState(false);
+  const aiPlayerAbortRef = useRef<AbortController | null>(null);
   const [designerStatus, setDesignerStatus] = useState(
     "Live GPT-5.6 is optional; the labelled example uses the identical validation path.",
   );
@@ -89,6 +93,8 @@ export function App() {
     return () => {
       if (timer !== null) window.clearTimeout(timer);
       sharedRef.current?.destroy();
+      designerAbortRef.current?.abort();
+      aiPlayerAbortRef.current?.abort();
     };
   }, [attachSharedRoom]);
 
@@ -312,7 +318,11 @@ export function App() {
   };
 
   const askDesigner = async () => {
+    const controller = new AbortController();
+    designerAbortRef.current?.abort();
+    designerAbortRef.current = controller;
     setDesignerBusy(true);
+    setDesignerRetry(false);
     const initialHash = game.snapshot().stateHash;
     try {
       const result = await runDesignerRepairLoop({
@@ -348,6 +358,7 @@ export function App() {
               if (event.type === "progress")
                 setDesignerStatus(`GPT-5.6 · ${event.stage}…`);
             },
+            controller.signal,
           );
         },
         validate: (source) => speculateDesignerCandidate(game, source),
@@ -383,17 +394,32 @@ export function App() {
         setGameRevision((value) => value + 1);
         return;
       }
+      if (controller.signal.aborted) {
+        setDesignerRetry(true);
+        setDesignerStatus(
+          "Designer request cancelled. Nothing was committed; retry or use the labelled example.",
+        );
+        return;
+      }
+      setDesignerRetry(true);
       setDesignerStatus(
         result.error === undefined
           ? "Three candidates failed local validation. Nothing was committed; use the labelled example."
           : `${result.error}. The labelled fallback remains playable.`,
       );
     } finally {
-      setDesignerBusy(false);
+      if (designerAbortRef.current === controller) {
+        designerAbortRef.current = null;
+        setDesignerBusy(false);
+      }
     }
   };
 
   const askAiPlayer = async () => {
+    const controller = new AbortController();
+    aiPlayerAbortRef.current?.abort();
+    aiPlayerAbortRef.current = controller;
+    setAiPlayerBusy(true);
     const offered = game.legalActions("ai");
     const optionMap = new Map(
       offered.map((option, index) => [
@@ -403,16 +429,19 @@ export function App() {
     );
     setGameMessage("GPT-5.6 Luna is choosing from opaque legal option IDs…");
     try {
-      const response = await requestPlayerChoice({
-        roomId: "judge-shifting-vaults",
-        baseHash: game.snapshot().stateHash,
-        inspection: inspectionFor(game),
-        options: [...optionMap].map(([optionId, option]) => ({
-          optionId,
-          label: option.label,
-          consequence: actionConsequence(option),
-        })),
-      });
+      const response = await requestPlayerChoice(
+        {
+          roomId: "judge-shifting-vaults",
+          baseHash: game.snapshot().stateHash,
+          inspection: inspectionFor(game),
+          options: [...optionMap].map(([optionId, option]) => ({
+            optionId,
+            label: option.label,
+            consequence: actionConsequence(option),
+          })),
+        },
+        controller.signal,
+      );
       const stillLegal = resolveChosenOption({
         offered: optionMap,
         chosenOptionId: response.choice.option_id,
@@ -426,6 +455,12 @@ export function App() {
         `Live ${response.model}: ${response.choice.reason} · committed through performAction.`,
       );
     } catch {
+      if (controller.signal.aborted) {
+        setGameMessage(
+          "Luna request cancelled. Ivo remains ready; retry or use the labelled fallback.",
+        );
+        return;
+      }
       const fallback = game.chooseFallbackAction("ai");
       performOption(fallback);
       finishSeatTurn(game, "ai", performOption);
@@ -433,6 +468,11 @@ export function App() {
       setGameMessage(
         `Labelled deterministic fallback chose ${fallback.label} after the live AI path was unavailable.`,
       );
+    } finally {
+      if (aiPlayerAbortRef.current === controller) {
+        aiPlayerAbortRef.current = null;
+        setAiPlayerBusy(false);
+      }
     }
   };
 
@@ -558,10 +598,22 @@ export function App() {
                   <button
                     className="ai-turn-button"
                     type="button"
+                    disabled={aiPlayerBusy}
                     onClick={() => void askAiPlayer()}
                   >
-                    Ask GPT-5.6 Luna for Ivo move
+                    {aiPlayerBusy
+                      ? "Luna is choosing…"
+                      : "Ask GPT-5.6 Luna for Ivo move"}
                   </button>
+                  {aiPlayerBusy ? (
+                    <button
+                      className="ai-turn-button"
+                      type="button"
+                      onClick={() => aiPlayerAbortRef.current?.abort()}
+                    >
+                      Cancel Luna request
+                    </button>
+                  ) : null}
                   <button
                     className="ai-turn-button"
                     type="button"
@@ -714,8 +766,20 @@ export function App() {
               disabled={designerBusy || sharedView?.role === "player"}
               onClick={() => void askDesigner()}
             >
-              {designerBusy ? "Validating GPT-5.6…" : "Ask GPT-5.6 Designer"}
+              {designerBusy
+                ? "Validating GPT-5.6…"
+                : designerRetry
+                  ? "Retry GPT-5.6 Designer"
+                  : "Ask GPT-5.6 Designer"}
             </button>
+            {designerBusy ? (
+              <button
+                type="button"
+                onClick={() => designerAbortRef.current?.abort()}
+              >
+                Cancel Designer request
+              </button>
+            ) : null}
             <button
               type="button"
               disabled={sharedView?.role === "player"}

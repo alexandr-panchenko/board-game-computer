@@ -3,10 +3,10 @@
 > **Working title.** Describe, play, and rewrite a board game in one shared
 > room—people and GPT-5.6 operate the same safe, reversible tabletop language.
 
-**Build Week status:** Milestone 7 is deployed and production-verified. The
-repository now also includes capability-linked persistent rooms, hibernatable
-WebSockets, one-in-flight optimistic rebase, reconnect, patch timeline, and
-persistent prefix forks. Reliability/security hardening is the active gate.
+**Build Week status:** Milestone 7 is deployed and production-verified.
+Milestone 8 hardening is locally validated, including graceful AI cancellation,
+security/protocol limits, clean-console fallback, and the full mobile matrix;
+production promotion and reversible rollback verification are the active gate.
 
 ## Live demo
 
@@ -105,6 +105,9 @@ bun run validate
 Chromium binary once per machine: `bunx playwright install chromium`. Live AI
 tests are deliberately separate and opt-in.
 
+Production deploy, exact-version smoke, and reversible rollback commands are
+documented in `docs/14-OPERATIONS-RUNBOOK.md`.
+
 See `docs/06-TEST-PLAN.md` for exact coverage, performance budgets, live-AI test
 policy, and acceptance gates.
 
@@ -192,6 +195,7 @@ See `docs/03-DECISION-LOG.md` for the complete record.
 - `docs/05-IMPLEMENTATION-PLAN.md` — autonomous build runbook.
 - `docs/06-TEST-PLAN.md` — validation strategy.
 - `docs/08-SUBMISSION-EVIDENCE.md` — claims-to-evidence matrix.
+- `docs/14-OPERATIONS-RUNBOOK.md` — production verification and rollback.
 - `docs/09-SUBMISSION-COPY-DRAFT.md` — draft only; rewrite in the author's
   voice before submission.
 

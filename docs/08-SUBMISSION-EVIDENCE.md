@@ -276,6 +276,24 @@ not evidence.
   `evidence/local/m7-production-player-mobile.png` (gitignored local artifacts,
   visually reviewed without capability text).
 
+## M8 reliability and security evidence
+
+- M8 implementation hardens AI cancellation/retry, fatal UI recovery,
+  canonical divergence reconstruction, same-origin WebSockets, CSP and browser
+  headers, malformed/body/cell/chat/room/connection/rate limits, and exact
+  post-deploy smoke verification.
+- Focused local gates passed on 2026-07-21: 50 unit tests and 14 Worker tests.
+  The complete `AI_ENABLED=false bun run test:e2e` matrix passed 36 desktop and
+  mobile checks; the required mobile-only rerun passed all 18 checks. Both
+  include cancellation, fallback completion without console-breaking errors,
+  two-client convergence, reconnect, and persistent fork.
+- Static generated art was cut under the documented M8 fallback because
+  primitive visuals are original, deterministic, already coherent, and carry
+  no loading or provenance risk. No generated asset claim is made.
+- `docs/14-OPERATIONS-RUNBOOK.md` records the exact deployment, smoke,
+  rollback, and restore commands. Production version IDs and live results are
+  pending the M8 deployment.
+
 ## Requirements and judging evidence
 
 | Status | Requirement / criterion | Claim to verify | Exact evidence required | URL/file/video timestamp | Verification method |

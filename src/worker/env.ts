@@ -23,4 +23,9 @@ export interface Env {
   AI_MAX_ESTIMATED_INPUT_TOKENS_PER_DAY?: string;
   AI_MAX_REQUESTS_PER_ROOM_PER_HOUR?: string;
   AI_REQUEST_TIMEOUT_MS?: string;
+  ROOM_MAX_CELL_BYTES?: string;
+  ROOM_MAX_CELLS?: string;
+  ROOM_MAX_CONNECTIONS?: string;
+  ROOM_COMMANDS_PER_MINUTE?: string;
+  ROOM_MAX_CHAT_MESSAGE_BYTES?: string;
 }

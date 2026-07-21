@@ -4,6 +4,7 @@ export { CURATED_REPLAY, roomFixtures } from "./fixtures";
 export {
   applySharedCell,
   decodeCanonicalAction,
+  rebuildSharedRoom,
   resolveCanonicalAction,
 } from "./shared-cell";
 export {
