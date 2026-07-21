@@ -116,10 +116,22 @@ Local validation passed on 2026-07-21:
 - secret scan over 120 repository files plus build output;
 - license scan over 27 direct dependencies.
 
-The build retains the known non-blocking Pixi chunk-size warning. Clean-clone,
-CI, deployment, exact-SHA production, live model, forced fallback, and final
-two-browser verification are recorded only after they run against the committed
-candidate.
+The build retains the known non-blocking Pixi chunk-size warning.
+
+Final product commit `12bc62b3ed175eaeaf4b87f24bebaa17b5598e0b`
+passed the same complete matrix locally and from a pristine clone. GitHub
+Actions run `29871593555` passed; deploy job `88775307755` published and
+smoke-verified that exact SHA at `https://boardgamecomputer.com`.
+
+Production verification then passed:
+
+- exact `/api/version`, `/api/health`, `/judge`, and security headers;
+- 21 executed desktop/mobile E2E cases with 3 intentional cross-project skips;
+- real browser Luna response identifying `gpt-5.6-luna`;
+- real browser Designer commit, Ruby Resonance trigger, and Cell 20 source;
+- forced Player and Designer 503 fallback;
+- two clean room contexts with Designer/Player roles, fragment removal,
+  convergence, reconnect, rollback/forward, and fork.
 
 Candidate screenshots:
 

@@ -13,7 +13,7 @@ Last design review: **2026-07-21**
 | M6 — Complete hero/judge flow | complete | Local validation, CI, exact production version, live AI path, and deployed desktop/mobile checks passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve the literal judge path while adding persistence | `405fe3a` |
 | M7 — Persistent shared rooms and rebase | complete | Local validation, CI, exact production version, two-browser convergence/reload/fork passed 2026-07-21 | None known beyond the existing bundle warning | Preserve ordering and capability boundaries during hardening | `d9ebcda` |
 | M8 — Reliability, mobile, security, and production verification | complete | Local/CI validation, apex exact-version smoke, 36-check production E2E, M7 rollback/M8 restore, and propagation-aware deploy passed 2026-07-21 | Known non-blocking Pixi chunk warning | Preserve the verified release while freezing evidence | `51dc131`, production gate `b1a270d` |
-| M9 — Evidence and release freeze | in progress | Hero-polish local matrix passed 2026-07-21: 43 unit, 14 Worker, 21 desktop/mobile E2E with 3 intentional project skips, build, secret, and license checks | Clean-clone, CI, deployment, live production, fallback, and shared-room verification remain; non-blocking Pixi chunk warning remains | Commit and push the focused hero polish, verify the immutable SHA, then await explicit owner product review; do not tag | Hero baseline `c413530`; reset record `b515361`; rejected baseline `6fe6e43` |
+| M9 — Evidence and release freeze | in progress | Hero candidate `12bc62b` passed local and clean-clone matrices, CI run `29871593555`, deploy job `88775307755`, exact-SHA smoke, 21-case production E2E, live Luna/Designer, forced fallback, and two-browser room verification 2026-07-21 | Explicit owner product approval remains absent; known non-blocking Pixi chunk warning remains | Await owner human review; keep M9 open and do not tag or request owner-only artifacts | Hero `b021fab`; CI hardening `7adca50`; viewport gate `12bc62b`; rejected baseline `6fe6e43` |
 
 ## Current gate
 
@@ -37,6 +37,11 @@ foundation. `docs/18-HERO-POLISH-AUDIT.md` records the active final hero-track,
 copy, interaction, Program, Table Agent, sharing, and visual-polish pass. This
 work does not reopen the product architecture and does not change the release
 gate.
+
+Hero product commit `12bc62b3ed175eaeaf4b87f24bebaa17b5598e0b`
+passed exact-SHA production verification through GitHub Actions run
+`29871593555` and deploy job `88775307755`. The polished product is technically
+verified and returned for human judgment; this is not owner acceptance.
 
 ## Cut line
 

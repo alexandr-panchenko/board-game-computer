@@ -112,6 +112,32 @@ At 1440 × 900 the five-second review answers are visible without scrolling:
 
 ## Post-deployment audit
 
-This section will record the same hands-on checks and the required screenshot
-set after the polished build is deployed. Automated results will remain
-verification evidence, not product approval.
+The final images above were recaptured from the exact production deployment,
+not the local development server. Product commit
+`12bc62b3ed175eaeaf4b87f24bebaa17b5598e0b` passed GitHub Actions run
+`29871593555` and deploy job `88775307755`.
+
+The production game was then exercised in clean browser contexts:
+
+- `/` opened as ordinary play with no forced judge narrative;
+- `/judge` completed the direct crystal, automatic Ivo, Table Agent, House
+  Rule, Ruby purchase, rule-fire, and exact Program-cell path;
+- the real Player endpoint returned model `gpt-5.6-luna` and Ivo completed a
+  legal move;
+- the real Designer endpoint committed Ruby Resonance without using the
+  labelled offline example;
+- forced 503 responses for both AI endpoints completed the truthful fallback;
+- a production room routed to `/room/<id>`, opened Share automatically, joined
+  a clean second context as Player, removed the fragment, converged, reloaded,
+  moved backward/forward in history, and forked without changing the parent;
+- all 21 executed production Playwright cases passed with 3 intentional
+  cross-project skips and no page-breaking console error.
+
+The same hands-on review remains positive: crystal selection and purchase are
+understandable on the physical table; costs and discounts are readable; Ivo's
+turn and thinking state are visible; Prism and Echo are printed on cards; Ruby
+Resonance fires physically; Program undo/redo remains available; ordinary play
+continues toward 8 Prestige; sharing is discoverable without Advanced.
+
+Automation and this audit establish technical and presentation evidence. They
+do not grant owner product approval.

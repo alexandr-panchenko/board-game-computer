@@ -34,7 +34,7 @@ M9 remains in progress. The final tag, eligibility confirmation, Codex Session I
 - [x] Advanced hashes and room internals are collapsed.
 - [x] Mobile retains the table as base and uses touch-safe drawers.
 - [x] Full hero-polish local validation passed, including desktop/mobile hero and shared-room automation.
-- [ ] Clean-clone, CI, deployment, and production verification is pending.
+- [x] Exact-SHA clean-clone, CI, deployment, live model, fallback, and shared-room production verification passed for `12bc62b`.
 - [ ] Explicit owner product acceptance has not yet been received.
 
 ## Mandatory behavior checklist
@@ -52,7 +52,7 @@ M9 remains in progress. The final tag, eligibility confirmation, Codex Session I
 
 ## Validation gate
 
-The pending row is filled with exact commands, dates, CI run, deployed commit, production smoke, shared-room verification, and screenshots only after the hero candidate completes the full local and production matrix. Passing automation does not itself satisfy the owner acceptance checkbox.
+Hero commit `12bc62b3ed175eaeaf4b87f24bebaa17b5598e0b` passed GitHub Actions run `29871593555`, deploy job `88775307755`, exact production smoke, live Luna/Designer play, forced fallback, desktop/mobile E2E, and two-browser sharing. Passing this matrix does not itself satisfy the owner acceptance checkbox.
 
 ## Release decision
 
