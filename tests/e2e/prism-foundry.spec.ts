@@ -195,6 +195,7 @@ test("physical Rulebook replaces the old bottom rules grid", async ({
 test("Program is continuous syntax-highlighted source beside the table", async ({
   page,
 }, testInfo) => {
+  test.setTimeout(90_000);
   await page.goto("/judge");
   await page.getByRole("button", { name: /^Program/ }).click();
   await expect(

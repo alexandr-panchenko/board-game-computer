@@ -396,7 +396,7 @@ summary:focus-visible {
 }
 .interactive-table {
   position: relative;
-  width: min(100%, calc((100vh - 245px) * 1.6));
+  width: min(100%, calc((100vh - 260px) * 1.6));
   min-width: 0;
   margin: 0 auto;
   aspect-ratio: 1120 / 700;
