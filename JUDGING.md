@@ -7,10 +7,9 @@
 - User API key: not required
 - Best path: desktop or mobile modern browser
 
-Current production status: M4 is deployed and verified. M5 is locally validated
-and awaiting its implementation deployment; live GPT-5.6 should not be treated
-as production evidence until that deployment is verified. Shared-room
-persistence remains future milestone work.
+Current production status: M5 is deployed and verified. The deterministic and
+validated GPT-5.6 paths below work in production. Guided replay/takeover polish
+and shared-room persistence remain later milestone work.
 
 ## Current deterministic path
 
@@ -41,7 +40,7 @@ Press **Use labelled example rule**. The application inserts a clearly marked
 prewritten cell into the same validator and interpreter. This fallback is not
 presented as a live GPT-5.6 response.
 
-## Validated M5 path after deployment
+## Validated M5 path
 
 1. Press **Ask GPT-5.6 Designer** with the prepared blue-gate request.
 2. Watch accepted, budget, and generating progress; confirm the returned source

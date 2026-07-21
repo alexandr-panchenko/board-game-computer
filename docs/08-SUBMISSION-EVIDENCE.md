@@ -161,7 +161,21 @@ not evidence.
   speculative-execution review.
 - Local visual evidence: `evidence/local/m5-designer-desktop.png` and
   `evidence/local/m5-designer-mobile.png` (gitignored local artifacts).
-- Implementation commit: `<pending implementation commit>`.
+- Implementation commit: `aab81ed6bd686a4492ca272f01abfe97a8fbcd8d`
+  (pushed to `origin/main`).
+- GitHub Actions run:
+  `https://github.com/alexandr-panchenko/board-game-computer/actions/runs/29806911715`;
+  both `validate` and `deploy` jobs completed successfully.
+- Production `/api/version` reported the exact implementation commit;
+  `/api/health`, `/api/room-health`, and `/api/ai/status` passed. AI status
+  reported enabled Designer `gpt-5.6`, Player `gpt-5.6-luna`, and fallback
+  availability without exposing secret material.
+- Production Playwright passed six desktop/mobile checks covering shell,
+  labelled fallback, and the locally validated mocked-AI paths.
+- Bounded production Designer verification streamed accepted/budget/generating
+  progress and a strict `gpt-5.6-sol` canonical blue-gate Scenario in 2,804 ms.
+  Production Luna selected offered option `opaque-search` in 1,357 ms; no
+  literal action arguments or credentials were sent to the model.
 
 ## Requirements and judging evidence
 
