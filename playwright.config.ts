@@ -5,6 +5,7 @@ const remoteBaseUrl = process.env.PLAYWRIGHT_BASE_URL;
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
+  workers: 1,
   reporter: "line",
   use: {
     baseURL: remoteBaseUrl ?? "http://127.0.0.1:41737",

@@ -1,14 +1,9 @@
 import type { TraceEvent } from "../runtime/store/types";
-import type { VaultSnapshot } from "../sample";
+import type { FoundrySnapshot } from "../sample";
 
 export interface RuntimeChangeSet {
-  snapshot: VaultSnapshot;
+  snapshot: FoundrySnapshot;
   changedIds: string[];
-}
-
-export interface DragPreview {
-  entityId: string;
-  destinationIds: string[];
 }
 
 export interface Viewport {
@@ -21,8 +16,6 @@ export interface TableRenderer {
   mount(container: HTMLElement): Promise<void>;
   applyCommittedChanges(changeSet: RuntimeChangeSet): void;
   applyInverseChanges(changeSet: RuntimeChangeSet): void;
-  previewDrag(preview: DragPreview): void;
-  clearPreview(): void;
   focusTrace(trace: TraceEvent[]): void;
   resize(viewport: Viewport): void;
   destroy(): void;

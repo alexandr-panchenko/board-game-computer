@@ -1,5 +1,12 @@
 # Implementation plan
 
+> **Sample-reset note (D-057):** The M4–M6 sample-specific instructions below
+> document the completed original milestone sequence and are superseded for the
+> current production product by `docs/17-PRODUCT-RESET.md`. Prism Foundry is now
+> the sole production sample; M9 remains in progress pending replacement
+> deployment and explicit owner approval. Platform milestone invariants remain
+> binding.
+
 This is the execution runbook for the primary Codex build session. Milestones
 must be completed in order. A failed required validation blocks progression.
 

@@ -341,8 +341,8 @@ Builder rules:
 ### Invariant
 
 ```js
-Invariant("Threat remains in bounds", () => {
-  return threat.value >= 0 && threat.value <= 10;
+Invariant("Prestige is non-negative", () => {
+  return mara.prestige >= 0 && ivo.prestige >= 0;
 });
 ```
 
@@ -353,14 +353,13 @@ Invariants run after trigger completion and before cell commit.
 Optional but strongly recommended for generated rules:
 
 ```js
-Example("Entering a blue gate rotates one room", () => {
-  GivenState(() => move(mara, glassGallery));
-  WhenAction(() => performAction("move", {
+Example("Buying a Ruby card adds its discount", () => {
+  GivenState(() => give(mara, [ruby, sapphire]));
+  WhenAction(() => performAction("buy-card", {
     actorId: "human",
-    entityId: "explorer-mara",
-    destinationId: "azure-gate"
+    cardId: "crimson-relay"
   }));
-  ThenExpect(() => roomRotation("mirror-gallery") === 90);
+  ThenExpect(() => mara.discounts.ruby === 1);
 });
 ```
 
@@ -495,30 +494,23 @@ API signatures, not only a generic error string.
 Illustrative only; exact sample source may use helpers:
 
 ```js
-const gatehouse = Zone("gatehouse", {
-  label: "Gatehouse",
-  path: RectPath(0, 400, 220, 160),
-  grid: { row: 2, column: 1 },
-  doors: ["north"],
-  rotation: 0,
-  tags: ["room", "start"],
+const bank = Zone("central-bank", {
+  label: "Crystal Bank",
+  path: RectPath(180, 250, 700, 160),
+  tags: ["bank", "physical"],
 });
 
-const azureGate = Zone("azure-gate", {
-  label: "Azure Gate",
-  path: RectPath(240, 200, 220, 160),
-  grid: { row: 1, column: 1 },
-  doors: ["south", "east"],
-  rotation: 0,
-  linkedRoomId: "mirror-gallery",
-  tags: ["room", "blue-gate"],
+const market = Zone("market", {
+  label: "Face-up Market",
+  path: RectPath(260, 40, 820, 190),
+  tags: ["market", "card-zone"],
 });
 
-const mara = Entity("explorer-mara", {
-  kind: "explorer",
+const ruby = Entity("ruby-1", {
+  kind: "crystal-token",
   owner: "human",
-  zone: gatehouse,
-  tags: ["explorer"],
+  zone: bank,
+  tags: ["ruby", "ordinary-crystal"],
 });
 ```
 

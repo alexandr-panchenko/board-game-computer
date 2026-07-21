@@ -361,6 +361,43 @@ export class TransactionalStore {
     return result;
   }
 
+  toHost(value: RuntimeValue): unknown {
+    const visiting = new Set<ObjectId>();
+    const convert = (item: RuntimeValue): unknown => {
+      switch (item.type) {
+        case "undefined":
+          return undefined;
+        case "null":
+          return null;
+        case "boolean":
+        case "number":
+        case "string":
+          return item.value;
+        case "function":
+          return { functionId: item.functionId };
+        case "native-function":
+          return { nativeId: item.nativeId };
+        case "object": {
+          if (visiting.has(item.objectId))
+            throw new Error("Cyclic runtime values cannot be inspected");
+          visiting.add(item.objectId);
+          const object = this.getHeapObject(item.objectId);
+          const result =
+            object.kind === "array"
+              ? object.items.map(convert)
+              : Object.fromEntries(
+                  [...object.properties]
+                    .sort(([left], [right]) => compareText(left, right))
+                    .map(([key, child]) => [key, convert(child)]),
+                );
+          visiting.delete(item.objectId);
+          return result;
+        }
+      }
+    };
+    return convert(value);
+  }
+
   hash(): string {
     return stableHash(this.canonicalState());
   }

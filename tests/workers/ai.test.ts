@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 
-import { BLUE_GATE_HERO_SOURCE } from "../../src/sample";
+import { RUBY_RESONANCE_SOURCE } from "../../src/sample";
 import type { DesignerRequest, PlayerRequest } from "../../src/shared/ai";
 import type { AiGateway, GatewayResult } from "../../src/worker/ai/gateway";
 import { AiGatewayError } from "../../src/worker/ai/gateway";
@@ -13,11 +13,11 @@ import {
 
 const designerRequest: DesignerRequest = {
   roomId: "worker-ai-room",
-  request: "Add the documented blue-gate rule.",
+  request: "Make Ruby purchases gain one available Prism.",
   baseSeq: 3,
   baseHash: "state-hash",
   sourceCells: [],
-  inspection: "Round 3, Mara in Clockwork Archive",
+  inspection: "Turn 3, Mara has Ruby and Sapphire",
   attempt: 1,
   diagnostics: [],
 };
@@ -25,12 +25,12 @@ const designerRequest: DesignerRequest = {
 const playerRequest: PlayerRequest = {
   roomId: "worker-player-room",
   baseHash: "state-hash",
-  inspection: "Ivo has 2 AP",
+  inspection: "Ivo is the active player",
   options: [
     {
       optionId: "opaque-1",
-      label: "Move",
-      consequence: "Move toward an unresolved room",
+      label: "Take Amber + Emerald",
+      consequence: "Move two finite tokens to Ivo's mat",
     },
   ],
 };
@@ -47,7 +47,7 @@ describe("ai worker boundary", () => {
     expect(response.headers.get("content-type")).toContain("text/event-stream");
     expect(body).toContain('"stage":"accepted"');
     expect(body).toContain('"type":"candidate"');
-    expect(body).toContain(JSON.stringify(BLUE_GATE_HERO_SOURCE).slice(1, -1));
+    expect(body).toContain(JSON.stringify(RUBY_RESONANCE_SOURCE).slice(1, -1));
     expect(gateway.designerModel).toBe("gpt-5.6");
   });
 
@@ -187,9 +187,9 @@ class FakeGateway implements AiGateway {
     this.designerModel = input.model;
     return Promise.resolve({
       value: {
-        source: BLUE_GATE_HERO_SOURCE,
-        summary: "Blue gates rotate linked rooms.",
-        expected_effects: ["Mirror Gallery rotates."],
+        source: RUBY_RESONANCE_SOURCE,
+        summary: "Ruby purchases gain a Prism.",
+        expected_effects: ["House Rules gains Ruby resonance."],
       },
       model: input.model,
       inputTokens: 30,
@@ -215,7 +215,10 @@ class FakeGateway implements AiGateway {
         ),
       );
     return {
-      value: { option_id: "opaque-1", reason: "Move toward the relic." },
+      value: {
+        option_id: "opaque-1",
+        reason: "Build toward an affordable card.",
+      },
       model: input.model,
       inputTokens: 20,
       outputTokens: 8,

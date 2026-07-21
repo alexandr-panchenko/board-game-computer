@@ -1,11 +1,10 @@
 import type { RuntimePatch } from "../runtime";
 import {
   applySharedCell,
-  createCuratedCheckpoint,
+  PrismFoundryRoom,
   rebuildSharedRoom,
   resolveCanonicalAction,
-  validateDesignerCandidate,
-  type ShiftingVaultsGame,
+  validateFoundryDesignerCandidate,
 } from "../sample";
 import type {
   CellProposal,
@@ -57,7 +56,7 @@ export interface RoomAccess {
 }
 
 type Update = (
-  game: ShiftingVaultsGame,
+  game: PrismFoundryRoom,
   view: SharedRoomView,
   message: string,
 ) => void;
@@ -69,7 +68,7 @@ export async function createSharedRoom(
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      templateId: "shifting-vaults-judge-v1",
+      templateId: "prism-foundry-v1",
       initialStateHash,
     }),
   });
@@ -127,7 +126,7 @@ export function accessFromCreation(creation: RoomCreation): RoomAccess {
 }
 
 export class SharedRoomClient {
-  private game = createCuratedCheckpoint();
+  private game = new PrismFoundryRoom();
   private socket: WebSocket | null = null;
   private destroyed = false;
   private reconnectTimer: number | null = null;
@@ -150,7 +149,7 @@ export class SharedRoomClient {
     this.connect();
   }
 
-  currentGame(): ShiftingVaultsGame {
+  currentGame(): PrismFoundryRoom {
     return this.game;
   }
 
@@ -171,15 +170,15 @@ export class SharedRoomClient {
 
   proposeAction(option: LegalActionOption): boolean {
     if (!this.canPropose()) return false;
-    const source = this.game.runtime.actionSource(option);
+    const source = this.game.actionSource(option);
     const result = this.game.perform(option);
     if (!result.ok) return false;
     this.pending.push({
       commandId: crypto.randomUUID(),
       kind: "action",
       source,
-      forward: result.commit.transaction.forward,
-      inverse: result.commit.transaction.inverse,
+      forward: result.forward,
+      inverse: result.inverse,
       postHash: this.game.snapshot().stateHash,
     });
     this.notify(
@@ -191,16 +190,16 @@ export class SharedRoomClient {
 
   proposeDesigner(source: string): boolean {
     if (!this.canPropose() || this.access.role !== "designer") return false;
-    const validation = validateDesignerCandidate(source);
+    const validation = validateFoundryDesignerCandidate(source);
     if (!validation.ok) return false;
-    const result = this.game.registerBlueGateScenario();
+    const result = this.game.commitDesigner(source);
     if (!result.ok) return false;
     this.pending.push({
       commandId: crypto.randomUUID(),
       kind: "code",
       source,
-      forward: result.commit.transaction.forward,
-      inverse: result.commit.transaction.inverse,
+      forward: result.forward,
+      inverse: result.inverse,
       postHash: this.game.snapshot().stateHash,
     });
     this.notify("Optimistic Designer cell queued for the persistent room.");
@@ -341,7 +340,7 @@ export class SharedRoomClient {
 
   private receiveSnapshot(snapshot: RoomSnapshot): void {
     if (this.confirmedSeq === 0 && this.timeline.length === 0) {
-      this.game = createCuratedCheckpoint();
+      this.game = new PrismFoundryRoom();
       this.confirmedHash = this.game.snapshot().stateHash;
     }
     for (const cell of snapshot.cells)
@@ -395,14 +394,14 @@ export class SharedRoomClient {
     const applied = applySharedCell(this.game, cell);
     if (applied !== null && !applied.ok) {
       this.connection = "conflict";
-      throw new Error(applied.failure.message);
+      throw new Error(applied.diagnostic.message);
     }
     const patch: PatchPair | null =
       applied === null
         ? null
         : {
-            forward: applied.commit.transaction.forward,
-            inverse: applied.commit.transaction.inverse,
+            forward: applied.forward,
+            inverse: applied.inverse,
           };
     this.timeline.push({ cell, patch });
     this.timelineCursor = this.timeline.length;
@@ -420,12 +419,12 @@ export class SharedRoomClient {
             ? this.game.perform(
                 resolveCanonicalAction(this.game, pending.source),
               )
-            : this.game.registerBlueGateScenario();
+            : this.game.commitDesigner(pending.source);
         if (!result.ok) continue;
         this.pending.push({
           ...pending,
-          forward: result.commit.transaction.forward,
-          inverse: result.commit.transaction.inverse,
+          forward: result.forward,
+          inverse: result.inverse,
           postHash: this.game.snapshot().stateHash,
         });
       } catch {

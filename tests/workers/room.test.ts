@@ -379,7 +379,7 @@ async function createRoom(initialStateHash: string): Promise<RoomCreation> {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        templateId: "shifting-vaults-judge-v1",
+        templateId: "prism-foundry-v1",
         initialStateHash,
       }),
     }),
@@ -403,7 +403,7 @@ function proposal(
     ...state,
     kind: "action",
     source:
-      'performAction("move-explorer", { actorId: "human", destinationId: "azure-gate" });',
+      'performAction("take-crystals", { actorId: "human", first: "ruby", second: "sapphire" });',
     author: {
       clientId: `client-${role}`,
       role,

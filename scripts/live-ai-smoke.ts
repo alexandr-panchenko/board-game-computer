@@ -1,4 +1,4 @@
-import { validateDesignerCandidate } from "../src/sample";
+import { validateFoundryDesignerCandidate } from "../src/sample";
 import { AI_MODELS } from "../src/shared/ai";
 import { OpenAiGateway } from "../src/worker/ai/gateway";
 import { readFile } from "node:fs/promises";
@@ -28,11 +28,11 @@ const timer = setTimeout(() => controller.abort("live-smoke-timeout"), 45_000);
 try {
   const designer = await gateway.proposeDesigner({
     model: AI_MODELS.designer,
-    prompt: `Return the required tool call with exactly this supported Board Game Computer rule shape. Do not add commentary or other source:\nScenario("blue-gate-rotates-linked-room", { given: "explorer-enters-blue-gate", when: "after", then: "rotate-linked-room-clockwise-if-empty" });`,
+    prompt: `Return the required tool call with exactly this supported Board Game Computer rule shape. Do not add commentary or other source:\naddHouseRule("Ruby resonance", { when: "buy-ruby", then: "gain-prism" });`,
     safetyIdentifier: "board-game-computer-live-smoke",
     signal: controller.signal,
   });
-  const validation = validateDesignerCandidate(designer.value.source);
+  const validation = validateFoundryDesignerCandidate(designer.value.source);
   if (!validation.ok)
     throw new Error(
       `Live Designer candidate failed ${validation.diagnostic.code}`,

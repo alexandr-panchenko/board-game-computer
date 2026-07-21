@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { FrameworkRuntime, Scenario } from "../../../src/runtime";
-import { ShiftingVaultsGame } from "../../../src/sample";
+import { PrismFoundryRoom } from "../../../src/sample";
 
 describe("table framework", () => {
   it("creates stable registries and deterministic PRNG state", () => {
@@ -113,18 +113,16 @@ describe("table framework", () => {
   });
 
   it("materializes one canonical legal-action path for human and AI", () => {
-    const game = new ShiftingVaultsGame();
+    const game = new PrismFoundryRoom();
     const option = game
       .legalActions("human")
-      .find((candidate) => candidate.actionId === "move-explorer");
+      .find((candidate) => candidate.actionId === "take-crystals");
     expect(option).toBeDefined();
-    expect(game.runtime.actionSource(option!)).toMatch(
-      /^performAction\("move-explorer", \{ actorId: "human", destinationId:/,
+    expect(game.actionSource(option!)).toMatch(
+      /^performAction\("take-crystals", \{ actorId: "human", first:/,
     );
     const result = game.perform(option!);
     expect(result.ok).toBe(true);
-    expect(game.snapshot().explorers["explorer-mara"]?.zoneId).toBe(
-      option?.parameters.destinationId,
-    );
+    expect(game.snapshot().activePlayerId).toBe("ai");
   });
 });

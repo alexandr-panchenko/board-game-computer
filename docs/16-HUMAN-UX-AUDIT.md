@@ -1,5 +1,11 @@
 # Human UX audit and correction plan
 
+> **Historical rejected baseline only.** The owner rejected the product audited
+> here at commit `6fe6e435858a7d397636aaef4ebba3872b29a880`. Its screenshots and
+> green checks demonstrate what was tested, not approval. The sole current
+> production sample and acceptance gate are defined by D-057 and
+> `docs/17-PRODUCT-RESET.md`.
+
 **Audit date:** 2026-07-21  
 **Production build inspected:** `de9b44f16b84d7a7bc8697bcebeeb40cf6214778`  
 **Routes:** `https://boardgamecomputer.com/` and

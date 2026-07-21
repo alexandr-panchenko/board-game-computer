@@ -6,11 +6,10 @@ const languageContract = `Board Game Computer Designer contract v1
 - Return exactly one source cell through the required tool.
 - Source is a deliberate JavaScript subset, never native JavaScript.
 - No eval, Function, browser, network, time, promises, classes, imports, or prototype access.
-- The showcased supported rule declaration is:
-  Scenario("blue-gate-rotates-linked-room", {
-    given: "explorer-enters-blue-gate",
-    when: "after",
-    then: "rotate-linked-room-clockwise-if-empty"
+- The showcased supported Prism Foundry rule declaration is:
+  addHouseRule("Ruby resonance", {
+    when: "buy-ruby",
+    then: "gain-prism"
   });
 - Do not invent framework names. Failed candidates are never committed.
 - The browser will parse, validate, and speculatively execute the candidate.`;
@@ -51,7 +50,7 @@ export function buildPlayerContext(request: PlayerRequest): string {
     )
     .join("\n");
   return redactSensitive(
-    `Choose one listed option for the AI explorer. Return only the required tool call.\n` +
+    `Choose one listed legal option for Ivo in Prism Foundry. Return only the required tool call.\n` +
       `State hash: ${request.baseHash}\nInspection:\n${request.inspection}\nOptions:\n${options}`,
   ).slice(0, AI_CONTEXT_MAX_CHARS);
 }

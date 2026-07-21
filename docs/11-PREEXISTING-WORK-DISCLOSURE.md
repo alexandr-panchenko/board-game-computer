@@ -40,7 +40,7 @@ The final repository should show dated evidence for:
 - scopes, closures, transactional heap, forward/inverse patches;
 - optimistic pending-tail rebase;
 - framework, BDD primitives, registered actions, geometry, and renderer;
-- complete original `Shifting Vaults` game;
+- complete original `Prism Foundry` game and its interpreted genesis program;
 - GPT-5.6 Designer and AI-player integration;
 - Cloudflare Worker/Durable Object deployment;
 - responsive judge experience, fallbacks, tests, and evidence;
@@ -77,7 +77,7 @@ Adapt in the author's voice only if accurate:
 > environment in an older hackathon prototype. For Build Week I started a new
 > repository and built the submitted implementation from scratch: the
 > reversible AST interpreter, transactional patches, tabletop framework,
-> Shifting Vaults game, GPT-5.6 integration, Cloudflare room service, product
+> Prism Foundry game, GPT-5.6 integration, Cloudflare room service, product
 > experience, tests, and deployment are new work from the submission period.
 
 Remove or revise this statement if any code or assets are actually reused.

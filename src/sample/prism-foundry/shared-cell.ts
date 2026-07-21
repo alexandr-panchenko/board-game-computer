@@ -4,14 +4,12 @@ import { parseCell } from "../../runtime/parser/parse-cell";
 import { validateCell } from "../../runtime/validator/validate-cell";
 import type {
   FrameworkData,
-  FrameworkResult,
   LegalActionOption,
   RuntimePatch,
 } from "../../runtime";
 import type { CommittedCell } from "../../shared/room";
-import { validateDesignerCandidate } from "./designer";
-import type { ShiftingVaultsGame } from "./game";
-import { createCuratedCheckpoint } from "./checkpoint";
+import { validateFoundryDesignerCandidate } from "./designer";
+import { PrismFoundryRoom } from "./room";
 
 export interface CanonicalAction {
   actionId: string;
@@ -20,7 +18,7 @@ export interface CanonicalAction {
 }
 
 export interface RebuiltSharedRoom {
-  game: ShiftingVaultsGame;
+  game: PrismFoundryRoom;
   patches: Array<{
     cell: CommittedCell;
     patch: { forward: RuntimePatch; inverse: RuntimePatch } | null;
@@ -31,25 +29,21 @@ export function rebuildSharedRoom(
   cells: CommittedCell[],
   expectedHash: string,
 ): RebuiltSharedRoom {
-  const game = createCuratedCheckpoint();
+  const game = new PrismFoundryRoom();
   const patches = cells.map((cell) => {
     const result = applySharedCell(game, cell);
-    if (result !== null && !result.ok) throw new Error(result.failure.message);
+    if (result !== null && !result.ok)
+      throw new Error(result.diagnostic.message);
     return {
       cell,
       patch:
         result === null
           ? null
-          : {
-              forward: result.commit.transaction.forward,
-              inverse: result.commit.transaction.inverse,
-            },
+          : { forward: result.forward, inverse: result.inverse },
     };
   });
   if (game.snapshot().stateHash !== expectedHash)
-    throw new Error(
-      "Rebuilt state still differs from the canonical attestation",
-    );
+    throw new Error("Rebuilt state differs from the canonical attestation");
   return { game, patches };
 }
 
@@ -80,7 +74,7 @@ export function decodeCanonicalAction(source: string): CanonicalAction {
 }
 
 export function resolveCanonicalAction(
-  game: ShiftingVaultsGame,
+  game: PrismFoundryRoom,
   source: string,
 ): LegalActionOption {
   const decoded = decodeCanonicalAction(source);
@@ -98,23 +92,23 @@ export function resolveCanonicalAction(
 }
 
 export function applySharedCell(
-  game: ShiftingVaultsGame,
+  game: PrismFoundryRoom,
   cell: Pick<CommittedCell, "kind" | "source">,
-): FrameworkResult<void> | null {
+) {
   if (cell.kind === "chat") return null;
   if (cell.source === undefined)
     throw new Error("Executable cell has no source");
   if (cell.kind === "action")
     return game.perform(resolveCanonicalAction(game, cell.source));
   if (cell.kind === "code") {
-    const validation = validateDesignerCandidate(cell.source);
+    const validation = validateFoundryDesignerCandidate(cell.source);
     if (!validation.ok)
       throw new Error(
         `${validation.diagnostic.code}: ${validation.diagnostic.message}`,
       );
-    return game.registerBlueGateScenario();
+    return game.commitDesigner(cell.source);
   }
-  throw new Error("System cells are only valid in immutable templates");
+  throw new Error("System cells are valid only in immutable templates");
 }
 
 function objectValue(
@@ -124,8 +118,9 @@ function objectValue(
   for (const candidate of expression.properties) {
     if (candidate.type !== "Property")
       throw new Error("Spread properties are not canonical action data");
-    const key = propertyKey(candidate);
-    output[key] = expressionValue(candidate.value as Expression);
+    output[propertyKey(candidate)] = expressionValue(
+      candidate.value as Expression,
+    );
   }
   return output;
 }
@@ -166,7 +161,7 @@ function sortRecord(
 ): Record<string, FrameworkData> {
   return Object.fromEntries(
     Object.entries(value)
-      .sort(([left], [right]) => left.localeCompare(right))
+      .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
       .map(([key, item]) => [key, sortValue(item)]),
   );
 }

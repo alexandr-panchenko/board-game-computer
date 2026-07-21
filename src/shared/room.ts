@@ -79,7 +79,7 @@ export const CommittedCellSchema = CellProposalSchema.and(
 
 export const CreateRoomRequestSchema = z
   .object({
-    templateId: id.default("shifting-vaults-judge-v1"),
+    templateId: id.default("prism-foundry-v1"),
     initialStateHash: stateHash,
   })
   .strict();

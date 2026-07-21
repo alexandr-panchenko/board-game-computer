@@ -5,11 +5,9 @@ import {
   runDesignerRepairLoop,
 } from "../../../src/app/designer-orchestrator";
 import {
-  BLUE_GATE_HERO_SOURCE,
-  commitDesignerCandidate,
-  ShiftingVaultsGame,
-  speculateDesignerCandidate,
-  validateDesignerCandidate,
+  PrismFoundryRoom,
+  RUBY_RESONANCE_SOURCE,
+  validateFoundryDesignerCandidate,
 } from "../../../src/sample";
 import {
   DesignerCandidateSchema,
@@ -23,9 +21,9 @@ import {
 import type { Env } from "../../../src/worker/env";
 
 const validCandidate = {
-  source: BLUE_GATE_HERO_SOURCE,
-  summary: "Blue gates rotate their linked room.",
-  expected_effects: ["Mirror Gallery rotates clockwise."],
+  source: RUBY_RESONANCE_SOURCE,
+  summary: "Ruby purchases gain a Prism.",
+  expected_effects: ["House Rules gains Ruby resonance."],
 };
 
 describe("ai contracts and local validation", () => {
@@ -61,28 +59,28 @@ describe("ai contracts and local validation", () => {
     ).toThrow();
   });
 
-  it("accepts only the supported hero Scenario source", () => {
-    expect(validateDesignerCandidate(BLUE_GATE_HERO_SOURCE)).toEqual({
+  it("accepts only the supported Prism Foundry House Rule source", () => {
+    expect(validateFoundryDesignerCandidate(RUBY_RESONANCE_SOURCE)).toEqual({
       ok: true,
     });
-    const invalid = validateDesignerCandidate("while (true) {}");
+    const invalid = validateFoundryDesignerCandidate("while (true) {}");
     expect(invalid.ok).toBe(false);
     if (!invalid.ok)
       expect(invalid.diagnostic.code).toBe("TS_UNSUPPORTED_NODE");
   });
 
   it("speculatively executes and exactly rolls back a valid Designer cell", () => {
-    const game = new ShiftingVaultsGame();
+    const game = new PrismFoundryRoom();
     const before = game.snapshot().stateHash;
-    expect(speculateDesignerCandidate(game, BLUE_GATE_HERO_SOURCE)).toEqual({
+    expect(game.speculateDesigner(RUBY_RESONANCE_SOURCE)).toEqual({
       ok: true,
     });
     expect(game.snapshot().stateHash).toBe(before);
-    expect(game.snapshot().zones["mirror-gallery"]?.rotation).toBe(0);
+    expect(game.snapshot().houseRules).toEqual([]);
   });
 
   it("repairs syntax failure and commits only the valid second candidate", async () => {
-    const game = new ShiftingVaultsGame();
+    const game = new PrismFoundryRoom();
     const before = game.snapshot().stateHash;
     const receivedDiagnostics: unknown[] = [];
     let generation = 0;
@@ -99,8 +97,8 @@ describe("ai contracts and local validation", () => {
       baseHash: before,
       currentHash: () => game.snapshot().stateHash,
       generate,
-      validate: validateDesignerCandidate,
-      commit: (source) => commitDesignerCandidate(game, source),
+      validate: (source) => game.speculateDesigner(source),
+      commit: (source) => game.commitDesigner(source),
     });
     expect(result).toMatchObject({ ok: true, attempts: 2 });
     expect(receivedDiagnostics).toContainEqual(
@@ -131,7 +129,7 @@ describe("ai contracts and local validation", () => {
   });
 
   it("stops after three failures and leaves the room unchanged", async () => {
-    const game = new ShiftingVaultsGame();
+    const game = new PrismFoundryRoom();
     const before = game.snapshot().stateHash;
     const result = await runDesignerRepairLoop({
       baseHash: before,
@@ -140,8 +138,8 @@ describe("ai contracts and local validation", () => {
         ...validCandidate,
         source: "fetch('https://forbidden.test')",
       }),
-      validate: validateDesignerCandidate,
-      commit: (source) => commitDesignerCandidate(game, source),
+      validate: (source) => game.speculateDesigner(source),
+      commit: (source) => game.commitDesigner(source),
     });
     expect(result).toMatchObject({ ok: false, attempts: 3 });
     expect(game.snapshot().stateHash).toBe(before);

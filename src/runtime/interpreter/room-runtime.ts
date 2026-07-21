@@ -124,4 +124,10 @@ export class RoomRuntime {
   bindings(): Record<string, RuntimeValue> {
     return this.store.globalBindings();
   }
+
+  binding<T>(name: string): T {
+    const value = this.bindings()[name];
+    if (value === undefined) throw new Error(`Unknown binding ${name}`);
+    return this.store.toHost(value) as T;
+  }
 }

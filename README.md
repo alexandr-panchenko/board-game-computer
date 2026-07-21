@@ -1,94 +1,67 @@
 # Board Game Computer
 
-> **Working title.** Describe, play, and rewrite a board game in one shared
-> room—people and GPT-5.6 operate the same safe, reversible tabletop language.
+**The board game is the program.**
 
-**Build Week status:** Milestone 8 hardening is deployed at the canonical
-domain, its full local/CI validation matrix is green, and rollback to the known
-good M7 version plus restoration of M8 have been verified. Final clean-browser
-production evidence is the active gate.
+Board Game Computer is a live shared tabletop where people and GPT-5.6 create, play, and change a game through the same reversible JavaScript-shaped command language. The production sample is **Prism Foundry**, an original two-player crystal-and-card engine builder. Every visible card, token, rule, setup step, and move comes from the room's interpreted source cells.
 
-## Live demo
+Release state: **AWAITING OWNER PRODUCT APPROVAL**. M9 is intentionally not final and no submission tag has been created.
 
-- Main: <https://boardgamecomputer.com/>
-- Judge route: <https://boardgamecomputer.com/judge>
-- Current status: **M8 deployed; final production browser evidence in progress**
+## Try the product
 
-The deployed build proves the complete end-to-end sequence on desktop and
-mobile, including a strict GPT-authored rule boundary, AI-seat selection,
-budget guard, labelled fallback, and two-browser convergence.
+- Production: <https://boardgamecomputer.com/>
+- Deterministic judging route: <https://boardgamecomputer.com/judge>
+- Exact walkthrough: [JUDGING.md](JUDGING.md)
 
-## 60–90 second judge path
+No login or user-provided API key is required. OpenAI calls are server-side. The deterministic fallback keeps the complete game playable when AI is disabled.
 
-1. Open `/judge`. A polished `Shifting Vaults` table is already in progress;
-   no login or API key is required.
-2. Advance the guided replay. Each step highlights a program cell and the exact
-   deterministic change it causes on the table.
-3. Select **Take control now** and perform the highlighted **Move → azure-gate**.
-4. Ask Luna to choose Ivo's move from the same registered action system.
-5. Ask the Designer agent: “Whenever an explorer enters a blue gate, rotate the
-   connected room clockwise.”
-6. Watch the validated source cell appear, move to Clockwork Archive, re-enter
-   Azure Gate, and see the new trigger rotate the connected room. Continue
-   playing toward a real win or loss.
+## Five-minute product path
 
-Expected result: the judge sees that the table is not an animation or an
-unconstrained model. It is a deterministic program with reversible commands,
-legal actions, live rule editing, replay, and multiplayer-ready ordering.
+1. Open `/judge`. Read the objective: first to 8 Prestige.
+2. Choose **Open the complete program**. Cells 1–16 show the actual creation of the table, bank, mats, finite tokens, original card catalog, market, actions, payment, abilities, turns, victory, and setup.
+3. Return to **Table** and choose **Take Ruby + Sapphire**. Both physical tokens move from the bank to Mara and Cell 17 joins the same Program.
+4. Choose **Let Ivo move**. GPT-5.6 Luna selects one offered legal option; if unavailable, the deterministic fallback selects from that same list.
+5. Choose **Open Change rules**. Ask GPT-5.6 Designer for the displayed Ruby resonance rule or use the clearly labelled offline example. Candidate source is parsed, validated, speculatively executed, and reversed before commit.
+6. Buy **Crimson Relay**. Payment returns to the bank, the card moves to Mara's tableau, Prestige and the Ruby discount increase, the market refills, and the new House Rule moves one Prism token to Mara.
+7. Continue playing to 8 Prestige, or inspect, undo, redo, replay, share, and fork the chronological program.
 
-For the optional collaboration proof, press **Create shared room**, open the
-Player link in a second browser, make a move, reload, inspect the previous
-patch, and fork that prefix. The server stores only capability hashes; the UI
-never displays a raw capability as text.
+## Prism Foundry rules
 
-## Demo video
+- Mara and Ivo alternate one ordinary action.
+- Take two different available Ruby, Sapphire, Emerald, or Amber tokens; or buy one affordable market card.
+- Purchased cards permanently discount future costs of their color and grant Prestige.
+- Prism tokens are wild payment. Prism cards gain one wild token; Echo cards grant another turn.
+- The first player to reach at least 8 Prestige wins. Ordinary legal actions close after victory, but history tools remain available.
 
-Public YouTube URL: `https://youtu.be/<video-id>`
+The complete rules and deterministic catalog contract are in [docs/13-SAMPLE-GAME-SPEC.md](docs/13-SAMPLE-GAME-SPEC.md).
 
-Current status: **not recorded yet**. The final video must be shorter than three
-minutes, include audio, and explain both Codex and GPT-5.6 usage.
+## Why the technology matters
 
-## What Board Game Computer is
+The room is one ordered append-only program. A custom TypeScript interpreter parses an Acorn AST and executes a deliberate JavaScript subset—never `eval` or `Function`. Every successful cell commits atomically with forward and inverse mutations. This makes local undo/redo, optimistic rollback, multiplayer rebase, replay inspection, and fork operate on patches instead of rebuilding ordinary state from scratch.
 
-Board Game Computer is a cell-driven live programming environment for tabletop
-play. A room is an ordered sequence of cells. Setup, objects, rules, player
-actions, chat, and AI-authored changes all become cells in that sequence.
+The server stores and globally orders cells but never executes game simulation. Deterministic clients receiving the same cells converge to the same state hash. React and PixiJS project the interpreted runtime; they are not a second canonical game model.
 
-The client parses a familiar JavaScript-shaped language with Acorn and executes
-an allowed subset in a custom TypeScript interpreter. Every cell records
-forward and inverse mutations over a transactional store. That enables atomic
-failure recovery, local undo/redo, optimistic multiplayer rollback, and cheap
-rebase without replaying the whole room.
+GPT-5.6 roles are deliberately narrow:
 
-The first complete sample, **Shifting Vaults**, is a 10–15 minute original
-adventure race with modular rotating rooms, movement points, relics, tactic
-cards, a threat track, deterministic randomness, one human seat, and one AI
-seat.
+- **Designer (`gpt-5.6`)** proposes source. The browser validates and speculates it before commit.
+- **Luna (`gpt-5.6-luna`)** chooses an opaque ID from registered legal options. It cannot invent an action.
 
-## Setup
+## Local development
 
-Prerequisite: Bun 1.2.5 or a compatible newer 1.x release. A Cloudflare login
-and OpenAI key are not required for the deterministic app shell or ordinary
-validation.
-
-Dependency lifecycle scripts are disabled in `bunfig.toml`; the frozen lockfile
-contains the prebuilt platform packages required by the toolchain.
+Requirements: Bun 1.2.5-compatible runtime and the checked-in lockfile.
 
 ```bash
 bun install --frozen-lockfile
 bun run dev
 ```
 
-Open <http://localhost:5173/> or <http://localhost:5173/judge>. The Vite server
-runs the Worker in `workerd`, so `/api/health` is available alongside the React
-app.
+For local live AI only, put the server-side key in gitignored `.dev.vars`:
 
-The local app opens at the immutable guided replay and requires no model call
-for its useful first state. When needed, copy `.env.example` to the already
-ignored `.dev.vars` and set `OPENAI_API_KEY` there only. The deterministic demo
-and all ordinary tests continue to work with `AI_ENABLED=false`.
+Add `OPENAI_API_KEY` to `.dev.vars`, alongside `AI_ENABLED=true`. Do not put a
+sample or real key value in tracked documentation.
 
-## Tests and validation
+Never use a `VITE_` prefix for the key. The browser never calls OpenAI directly.
+
+## Validation
 
 ```bash
 bun run format:check
@@ -100,130 +73,29 @@ bun run test:e2e
 bun run build
 bun run secrets:check
 bun run licenses:check
-bun run validate
 ```
 
-`bun run validate` executes every non-live check above. Playwright needs its
-Chromium binary once per machine: `bunx playwright install chromium`. Live AI
-tests are deliberately separate and opt-in.
+`bun run validate` runs the complete non-live matrix. `bun run test:ai:live` is opt-in and requires the server credential. `bun run smoke:production` checks the deployed public routes.
 
-Production deploy, exact-version smoke, and reversible rollback commands are
-documented in `docs/14-OPERATIONS-RUNBOOK.md`.
-
-See `docs/06-TEST-PLAN.md` for exact coverage, performance budgets, live-AI test
-policy, and acceptance gates.
-
-## Architecture at a glance
+## Architecture
 
 ```text
-Browser
-├─ React application and semantic controls
-├─ PixiJS renderer (replaceable adapter)
-├─ custom vector geometry kernel
-└─ RoomRuntime
-   ├─ Acorn parser and AST validator
-   ├─ reversible TypeScript AST interpreter
-   ├─ transactional scopes/slots/heap
-   ├─ forward and inverse mutation patches
-   ├─ BDD/action/game framework
-   ├─ deterministic PRNG and state hashing
-   └─ optimistic pending stack and rebase
-
-Cloudflare Worker
-├─ HTTP/SSE endpoints
-├─ OpenAI Responses API orchestration
-└─ Durable Objects
-   ├─ room cell ordering, storage, broadcast, reconnect
-   └─ global AI budget guard
+src/app/                    React surfaces and room client
+src/render/                 Pixi projection of interpreted entities
+src/geometry/               renderer-independent geometry
+src/runtime/                parser, validator, interpreter, store, patches, sync
+src/sample/prism-foundry/   executable genesis, projection, Designer boundary
+src/worker/                 Worker routes, Durable Objects, server-side AI
+tests/                      unit, Worker, desktop, mobile, room journeys
 ```
 
-The server never executes room simulation. It stores and globally orders
-source cells. Deterministic clients execute the same cells and compare state
-hashes.
+Current production source does not contain the rejected prior sample. Its commit history and [docs/16-HUMAN-UX-AUDIT.md](docs/16-HUMAN-UX-AUDIT.md) remain historical evidence only; [docs/17-PRODUCT-RESET.md](docs/17-PRODUCT-RESET.md) records the owner rejection and replacement gate.
 
-Detailed design: `docs/04-TECHNICAL-DESIGN.md`.
+## Security and provenance
 
-## GPT-5.6 usage
-
-Board Game Computer uses the OpenAI Responses API from the Cloudflare Worker:
-
-- `gpt-5.6` proposes Designer cells from natural-language requests;
-- `gpt-5.6-luna` chooses one registered legal action for the AI player;
-- strict function schemas wrap source and action proposals;
-- candidate source is parsed, capability-checked, fuel-bounded, and executed
-  speculatively before commit;
-- diagnostics are returned for up to three repair attempts;
-- API failure leaves the sample fully playable and exposes a clearly labelled
-  example-rule fallback.
-
-No OpenAI secret is shipped to the browser.
-
-## Codex collaboration
-
-This repository was implemented through one primary Codex build session using
-the frozen product packet and milestone contract. Concrete examples:
-
-- Codex built the custom parser/validator/interpreter, transactional store,
-  forward/inverse patches, deterministic hashes, and pending-tail rebase in
-  `src/runtime/**` (`f902c0a`), with rollback, closure, fuel, determinism, and
-  no-full-replay tests.
-- It implemented the original Shifting Vaults framework, geometry kernel, Pixi
-  projection, semantic actions, both endings, and desktop/mobile interaction
-  (`e5732aa`).
-- It integrated GPT-5.6 through server-only strict Responses API tools,
-  speculative Designer validation/repair, opaque legal AI options, budgets,
-  cancellation, and deterministic fallback (`aab81ed`, `51dc131`).
-- It built hashed-capability Durable Object rooms, hibernatable WebSockets,
-  exact-head sequencing, optimistic one-in-flight rebase, reconnect, timeline,
-  and persistent prefix fork (`d9ebcda`).
-- It maintained tests, status, evidence, deployment smoke, production rollback,
-  and release hardening milestone by milestone. The final matrix has 50 unit,
-  14 Worker, and 36 desktop/mobile browser checks.
-
-The human froze the core product and engineering decisions before
-implementation: room-as-program, a reversible interpreter instead of `eval`,
-patch-based undo/rebase, no server simulation, registered Player authority,
-top-down replaceable rendering, one complete game, cooperative security, and
-the explicit scope kill list. The primary `/feedback` Session ID still must be
-obtained from this session and entered privately in Devpost.
-
-## Key human decisions
-
-The product owner made these central decisions before implementation:
-
-- a room is a live ordered program, not a collection of configuration files;
-- people and agents use one command language with role-based capabilities;
-- the language keeps JavaScript syntax but executes in a custom reversible AST
-  interpreter;
-- every cell is atomic and produces forward/inverse patches;
-- the server sequences cells but does not simulate the game;
-- multiplayer uses optimistic rollback/reapply without locking;
-- top-down 2D and exact vector geometry replace 3D/physics;
-- the sample must be a complete short game, not a toy animation;
-- static AI-generated art is optional polish with deterministic primitives as
-  fallback;
-- no accounts, BYOK, anti-cheat, marketplace, or full GM role in Build Week.
-
-See `docs/03-DECISION-LOG.md` for the complete record.
-
-## Repository documents
-
-- `JUDGING.md` — shortest reliable evaluation path.
-- `STATUS.md` — milestone state and latest validation.
-- `docs/01-PRODUCT-BRIEF.md` — frozen product and scope.
-- `docs/04-TECHNICAL-DESIGN.md` — architecture and protocols.
-- `docs/05-IMPLEMENTATION-PLAN.md` — autonomous build runbook.
-- `docs/06-TEST-PLAN.md` — validation strategy.
-- `docs/08-SUBMISSION-EVIDENCE.md` — claims-to-evidence matrix.
-- `docs/14-OPERATIONS-RUNBOOK.md` — production verification and rollback.
-- `docs/09-SUBMISSION-COPY-DRAFT.md` — draft only; rewrite in the author's
-  voice before submission.
-
-## License and third-party notices
-
-Project code is planned for release under the MIT License. See `LICENSE` and
-`THIRD_PARTY_NOTICES.md`.
-
-The sample game, names, text, and checked-in assets must be original. Do not use
-commercial board-game names, rules text, logos, or art in the product, video,
-or screenshots.
+- OpenAI credentials remain server-side in `.dev.vars` locally and Cloudflare Worker secrets in production.
+- Room capability fragments are cooperative bearer links and are redacted from normal browser history.
+- Logs omit authorization data and full capabilities.
+- Secret and license scans are required before deployment.
+- Prism Foundry names, text, vector art, and procedural components are original repository work.
+- Preexisting-work disclosure: [docs/11-PREEXISTING-WORK-DISCLOSURE.md](docs/11-PREEXISTING-WORK-DISCLOSURE.md).

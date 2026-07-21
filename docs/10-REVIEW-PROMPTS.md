@@ -74,7 +74,7 @@ Pay special attention to whether these are real and visible:
 - custom reversible AST interpreter rather than wrappers around eval;
 - atomic forward/inverse patches;
 - pending-tail multiplayer rebase without full-room replay;
-- complete playable Shifting Vaults game;
+- complete playable Prism Foundry game created by the visible room program;
 - GPT-5.6 source authoring with validation/repair;
 - AI player limited to legal actions;
 - coherent first screen and 90-second path;

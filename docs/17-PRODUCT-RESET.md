@@ -101,3 +101,43 @@ accepts Prism Foundry, every status and release report must say:
 
 > **AWAITING OWNER PRODUCT APPROVAL**
 
+## Implementation record
+
+The replacement uses `src/sample/prism-foundry/genesis.ts` as a 16-cell
+executable room genesis. `PrismFoundryRoom` is an interpreter executor and
+runtime projector, not a hidden rules implementation: all catalog data and
+game-specific functions are declared by those cells. Program renders all 16
+genesis cells and every later action or Designer cell in one sequence. The Pixi
+projection draws the complete bank, market, deck, mats, tokens, discounts,
+Prestige, turn marker, Rulebook, House Rules, purchased cards, and winner from
+the runtime snapshot.
+
+The current judge sequence is genesis inspection → Mara takes Ruby + Sapphire
+→ Luna/fallback chooses for Ivo → Designer/offline example appends Ruby
+resonance → Mara buys Crimson Relay and fires the new rule → continued ordinary
+play to 8 Prestige. The rejected sample source has been deleted from the
+production tree; Git history preserves it.
+
+Validation and deployed identity are recorded in `STATUS.md` and
+`docs/08-SUBMISSION-EVIDENCE.md`. Even after they pass, this document's release
+gate remains unchanged until explicit human acceptance.
+
+## Replacement viewport review
+
+The rejected images below remain historical comparison evidence only. The
+Prism Foundry images are the local post-reset candidate and must be recaptured
+from the exact deployed commit after deployment.
+
+| Viewport | Rejected baseline | Prism Foundry replacement |
+|---|---|---|
+| 1440 × 900 | [historical image](../evidence/local/ux-after-1440x900.png) | [current image](../evidence/local/prism-foundry-after-1440x900.png) |
+| 1280 × 800 | [historical image](../evidence/local/ux-after-1280x800.png) | [current image](../evidence/local/prism-foundry-after-1280x800.png) |
+| Pixel 7 | [historical image](../evidence/local/ux-after-pixel7.png) | [current image](../evidence/local/prism-foundry-after-pixel7.png) |
+
+Five-second review of the replacement candidate:
+
+1. **What is this?** A board game created by its room program.
+2. **What is the goal?** First to 8 Prestige.
+3. **What next?** Open the complete program, then follow the gold action.
+4. **Where can AI change rules?** The first-level Change rules surface.
+5. **Which character is mine?** Mara, identified on the turn card and physical mat.
