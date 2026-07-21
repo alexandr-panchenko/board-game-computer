@@ -2,7 +2,7 @@
 
 Review date: 2026-07-21
 
-Release state: **AWAITING OWNER PRODUCT APPROVAL**
+Release state: **OWNER PRODUCT APPROVED**
 
 M9 remains in progress. The final tag, eligibility confirmation, Codex Session ID, video, Devpost copy, and attestations are intentionally outside this product-reset gate.
 
@@ -35,7 +35,7 @@ M9 remains in progress. The final tag, eligibility confirmation, Codex Session I
 - [x] Mobile retains the table as base and uses touch-safe drawers.
 - [x] Full hero-polish local validation passed, including desktop/mobile hero and shared-room automation.
 - [x] Exact-SHA clean-clone, CI, deployment, live model, fallback, and shared-room production verification passed for `12bc62b`.
-- [ ] Explicit owner product acceptance has not yet been received.
+- [x] Explicit owner product acceptance was received on 2026-07-22.
 
 ## Mandatory behavior checklist
 
@@ -56,4 +56,7 @@ Hero commit `12bc62b3ed175eaeaf4b87f24bebaa17b5598e0b` passed GitHub Actions run
 
 ## Release decision
 
-Do not create `build-week-submission`. Do not mark M9 complete. Deploy and verify the hero candidate, then return it for human judgment with the release state unchanged: **AWAITING OWNER PRODUCT APPROVAL**.
+The owner accepted the deployed Prism Foundry replacement and final hero
+presentation on 2026-07-22. Keep M9 in progress and do not create
+`build-week-submission` until the separate owner-only submission requirements
+are supplied and verified.

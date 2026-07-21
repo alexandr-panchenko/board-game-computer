@@ -1,8 +1,10 @@
 # Board Game Computer — submission evidence ledger
 
-Release state: **AWAITING OWNER PRODUCT APPROVAL**.
+Release state: **OWNER PRODUCT APPROVED** on 2026-07-22.
 
-This ledger records reproducible evidence; it is not owner acceptance and does not authorize the final tag.
+This ledger records reproducible evidence. The owner's explicit product
+acceptance is recorded separately from the still-pending M9 owner artifacts and
+does not authorize the final tag by itself.
 
 ## Product-reset decision
 
@@ -144,4 +146,5 @@ Candidate screenshots:
 - `evidence/local/hero-polish-share-dialog.png`;
 - `evidence/local/hero-polish-player-view.png`.
 
-These are manual review evidence, not owner approval.
+These screenshots supported manual review. The owner explicitly accepted the
+deployed replacement and final hero presentation on 2026-07-22.

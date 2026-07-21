@@ -1,102 +1,145 @@
 # Board Game Computer
 
-**Play the game. Rewrite the rules.**
+**Describe a board game, change its rules, and playtest it immediately with AI.**
 
-Collect crystals, build your engine, and ask the table to add a new rule while you play. The production sample is **Prism Foundry**, an original two-player crystal-and-card engine builder powered by a live, reversible program.
+Board Game Computer is a virtual tabletop for board-game designers, hobbyists,
+and groups who want to experiment with new mechanics or house rules without
+building a game prototype by hand.
 
-Release state: **AWAITING OWNER PRODUCT APPROVAL**. M9 is intentionally not final and no submission tag has been created.
+Instead of asking the AI to merely describe a game, you ask it to modify the
+actual running game program. The table immediately applies the new rule, enforces
+legal actions, and lets you continue playing against an AI opponent or another
+person.
 
-## Try the product
+## Try it
 
-- Production: <https://boardgamecomputer.com/>
-- Deterministic judging route: <https://boardgamecomputer.com/judge>
-- Exact walkthrough: [JUDGING.md](JUDGING.md)
+- Live application: https://boardgamecomputer.com/
+- Guided demo: https://boardgamecomputer.com/judge
+- Source: https://github.com/alexandr-panchenko/board-game-computer
 
-No login or user-provided API key is required. OpenAI calls are server-side. The deterministic fallback keeps the complete game playable when AI is disabled.
+No login, payment, or user API key is required.
 
-## 60–75 second hero path
+## What you can do
 
-1. Open `/judge`. The full table explains the goal and Mara's turn.
-2. Select the highlighted Ruby and Sapphire stacks, then choose **Take Ruby + Sapphire**. Both tokens visibly move to Mara.
-3. Ivo's mat enters a thinking state and GPT-5.6 Luna automatically chooses one legal move. A clearly labelled deterministic fallback keeps play moving if the request is unavailable.
-4. Choose **Change a rule**. The compact Table Agent opens beside the table. Ask GPT-5.6 Designer for the prepared Ruby Resonance rule.
-5. Close the drawer, inspect highlighted **Crimson Relay**, and choose **Buy**. Payment, card movement, discount, Prestige, market refill, and the rule-granted Prism animate on the table.
-6. Choose **View source** to open Program beside the table at the exact appended cell. Continue playing to 8 Prestige, or inspect, undo, redo, share, and fork the room.
+- Play a complete two-player tabletop game.
+- Make only actions allowed by the current rules.
+- Ask GPT-5.6 Luna to play as an opponent.
+- Ask GPT-5.6 Designer to add or change a rule.
+- See the new rule immediately affect the live game.
+- Inspect the complete game program.
+- Undo and redo actions and rule changes.
+- Create a shared room and invite another player.
+- Replay history or fork the game from an earlier point.
 
-The bare `/` and `/judge` routes are local games. Choose **Create shared room** to get a persistent `/room/<roomId>` route and a separate Player invite link.
+## Demo game: Prism Foundry
 
-## Prism Foundry rules
+Prism Foundry is an original crystal-and-card engine-building game.
 
-- Mara and Ivo alternate one ordinary action.
-- Take two different available Ruby, Sapphire, Emerald, or Amber tokens; or buy one affordable market card.
-- Purchased cards permanently discount future costs of their color and grant Prestige.
-- Prism tokens are wild payment. Prism cards gain one wild token; Echo cards grant another turn.
-- The first player to reach at least 8 Prestige wins. Ordinary legal actions close after victory, but history tools remain available.
+Each turn, a player either:
 
-The complete rules and deterministic catalog contract are in [docs/13-SAMPLE-GAME-SPEC.md](docs/13-SAMPLE-GAME-SPEC.md).
+- takes two different crystals; or
+- buys one affordable card.
 
-## Why the technology matters
+Purchased cards provide permanent discounts and Prestige. Some cards grant
+special abilities. The first player to reach 8 Prestige wins.
 
-The room is one ordered append-only program. A custom TypeScript interpreter parses an Acorn AST and executes a deliberate JavaScript subset—never `eval` or `Function`. Every successful cell commits atomically with forward and inverse mutations. This makes local undo/redo, optimistic rollback, multiplayer rebase, replay inspection, and fork operate on patches instead of rebuilding ordinary state from scratch.
+The guided demo shows three important capabilities:
 
-The server stores and globally orders cells but never executes game simulation. Deterministic clients receiving the same cells converge to the same state hash. React and PixiJS project the interpreted runtime; they are not a second canonical game model.
+1. The player makes a legal move.
+2. GPT-5.6 Luna chooses a move for the opponent from the same legal-action system.
+3. GPT-5.6 Designer adds a new rule to the running game, which immediately changes
+   what happens on the table.
 
-GPT-5.6 roles are deliberately narrow:
+## How it works
 
-- **Designer (`gpt-5.6`)** proposes source. The browser validates and speculates it before commit.
-- **Luna (`gpt-5.6-luna`)** chooses an opaque ID from registered legal options. It cannot invent an action.
+Every game room is controlled by a program written in a restricted scripting
+language with familiar JavaScript-like syntax.
+
+The language runs inside a custom interpreter that:
+
+- exposes only approved tabletop operations;
+- rejects unsupported or unsafe constructions;
+- limits execution;
+- validates every generated command;
+- records reversible state changes.
+
+The AI can therefore create objects, define rules, modify the game, or act as a
+player without receiving unrestricted access to the browser or server.
+
+The server stores and orders room commands, while clients execute the same
+deterministic program. This supports shared rooms, undo and redo, replay,
+optimistic multiplayer updates, and forks from earlier game states.
+
+## GPT-5.6 usage
+
+Board Game Computer uses GPT-5.6 in two different roles.
+
+### Designer
+
+The Designer receives the current game program and a natural-language request.
+It proposes a new source command or rule.
+
+Before that rule becomes part of the game, the application:
+
+1. parses it;
+2. validates the language and permissions;
+3. executes it speculatively;
+4. checks that it can be reversed exactly;
+5. commits it only after successful validation.
+
+### Player
+
+GPT-5.6 Luna receives a finite list of legal actions and selects one option. It
+cannot invent arbitrary moves or directly edit game state.
+
+A deterministic fallback keeps the full game playable when the OpenAI API is
+unavailable.
+
+## How Codex was used
+
+The project was developed through one primary Codex session using a detailed
+product and architecture packet.
+
+Codex autonomously implemented milestone by milestone:
+
+- the scripting-language interpreter;
+- reversible state patches;
+- the visual tabletop;
+- the complete demo game;
+- GPT-5.6 integration;
+- shared Cloudflare rooms;
+- tests, deployment, and production verification.
+
+Codex worked especially well for building and validating large coherent
+technical slices. It produced extensive automated coverage and repeatedly
+verified the live deployment.
+
+The main limitation was product judgment. Early versions were technically
+complete but confusing and visually unconvincing. Human review rejected those
+versions and redirected the agent toward a clearer game, a real room program,
+and a more understandable tabletop experience.
+
+This iterative combination—human product decisions and autonomous Codex
+implementation—was central to the final result.
+
+## Technology
+
+- TypeScript
+- React
+- PixiJS
+- Acorn
+- Custom reversible AST interpreter
+- OpenAI Responses API
+- GPT-5.6 and GPT-5.6 Luna
+- Cloudflare Workers
+- Durable Objects
+- Bun
+- Vitest
+- Playwright
 
 ## Local development
-
-Requirements: Bun 1.2.5-compatible runtime and the checked-in lockfile.
 
 ```bash
 bun install --frozen-lockfile
 bun run dev
 ```
-
-For local live AI only, put the server-side key in gitignored `.dev.vars`:
-
-Add `OPENAI_API_KEY` to `.dev.vars`, alongside `AI_ENABLED=true`. Do not put a
-sample or real key value in tracked documentation.
-
-Never use a `VITE_` prefix for the key. The browser never calls OpenAI directly.
-
-## Validation
-
-```bash
-bun run format:check
-bun run lint
-bun run typecheck
-bun run test
-bun run test:workers
-bun run test:e2e
-bun run build
-bun run secrets:check
-bun run licenses:check
-```
-
-`bun run validate` runs the complete non-live matrix. `bun run test:ai:live` is opt-in and requires the server credential. `bun run smoke:production` checks the deployed public routes.
-
-## Architecture
-
-```text
-src/app/                    React surfaces and room client
-src/render/                 Pixi projection of interpreted entities
-src/geometry/               renderer-independent geometry
-src/runtime/                parser, validator, interpreter, store, patches, sync
-src/sample/prism-foundry/   executable genesis, projection, Designer boundary
-src/worker/                 Worker routes, Durable Objects, server-side AI
-tests/                      unit, Worker, desktop, mobile, room journeys
-```
-
-Current production source does not contain the rejected prior sample. Its commit history and [docs/16-HUMAN-UX-AUDIT.md](docs/16-HUMAN-UX-AUDIT.md) remain historical evidence only; [docs/17-PRODUCT-RESET.md](docs/17-PRODUCT-RESET.md) records the owner rejection and replacement gate.
-
-## Security and provenance
-
-- OpenAI credentials remain server-side in `.dev.vars` locally and Cloudflare Worker secrets in production.
-- Room capability fragments are cooperative bearer links and are redacted from normal browser history.
-- Logs omit authorization data and full capabilities.
-- Secret and license scans are required before deployment.
-- Prism Foundry names, text, vector art, and procedural components are original repository work.
-- Preexisting-work disclosure: [docs/11-PREEXISTING-WORK-DISCLOSURE.md](docs/11-PREEXISTING-WORK-DISCLOSURE.md).

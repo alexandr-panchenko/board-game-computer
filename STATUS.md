@@ -1,6 +1,6 @@
 # Build status
 
-Last design review: **2026-07-21**
+Last design review: **2026-07-22**
 
 | Milestone | State | Last validation | Known issues | Next action | Commit |
 |---|---|---|---|---|---|
@@ -13,24 +13,24 @@ Last design review: **2026-07-21**
 | M6 — Complete hero/judge flow | complete | Local validation, CI, exact production version, live AI path, and deployed desktop/mobile checks passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve the literal judge path while adding persistence | `405fe3a` |
 | M7 — Persistent shared rooms and rebase | complete | Local validation, CI, exact production version, two-browser convergence/reload/fork passed 2026-07-21 | None known beyond the existing bundle warning | Preserve ordering and capability boundaries during hardening | `d9ebcda` |
 | M8 — Reliability, mobile, security, and production verification | complete | Local/CI validation, apex exact-version smoke, 36-check production E2E, M7 rollback/M8 restore, and propagation-aware deploy passed 2026-07-21 | Known non-blocking Pixi chunk warning | Preserve the verified release while freezing evidence | `51dc131`, production gate `b1a270d` |
-| M9 — Evidence and release freeze | in progress | Hero candidate `12bc62b` passed local and clean-clone matrices, CI run `29871593555`, deploy job `88775307755`, exact-SHA smoke, 21-case production E2E, live Luna/Designer, forced fallback, and two-browser room verification 2026-07-21 | Explicit owner product approval remains absent; known non-blocking Pixi chunk warning remains | Await owner human review; keep M9 open and do not tag or request owner-only artifacts | Hero `b021fab`; CI hardening `7adca50`; viewport gate `12bc62b`; rejected baseline `6fe6e43` |
+| M9 — Evidence and release freeze | in progress | Owner explicitly approved the deployed Prism Foundry replacement and final hero presentation on 2026-07-22 after the complete local, CI, production, live-AI, fallback, mobile, and room verification matrix | Owner-only submission artifacts and final tag remain outstanding; known non-blocking Pixi chunk warning remains | Preserve the approved product commit; keep M9 open and do not tag without a separate submission instruction | Approved product `0e4a7f8`; hero `b021fab`; rejected baseline `6fe6e43` |
 
 ## Current gate
 
-**AWAITING OWNER PRODUCT APPROVAL. M9 REMAINS IN PROGRESS; DO NOT TAG.** The
+**OWNER PRODUCT APPROVED. M9 REMAINS IN PROGRESS; DO NOT TAG.** The
 owner rejected production baseline `6fe6e43` despite its green automated and
 production verification. Prior tests and screenshots are historical regression
 evidence, not approval. Decision D-057 and `docs/17-PRODUCT-RESET.md` require
 Prism Foundry to replace that production sample through chronological
 interpreted genesis cells. Replacement commit `bac433f` passed the complete
 local and CI matrices, deployed successfully, and passed exact production,
-live GPT-5.6, forced-offline, desktop, and mobile verification. Owner review is
-still pending. The
+live GPT-5.6, forced-offline, desktop, and mobile verification. On 2026-07-22,
+the owner explicitly accepted the replacement and designated the approval
+record as the final product commit. The
 interpreter, transactional patches, deterministic runtime, AI boundaries,
 Durable Object ordering, reconnect/rebase/fork, deployment, security, and CI
 remain preserved. No owner-only submission artifact is part of this task. The
-release stays **AWAITING OWNER PRODUCT APPROVAL** after implementation and
-deployment until the owner explicitly accepts the replacement.
+release product gate is therefore **OWNER PRODUCT APPROVED**.
 
 Prism Foundry and the room-as-program architecture are now the accepted
 foundation. `docs/18-HERO-POLISH-AUDIT.md` records the active final hero-track,
@@ -41,7 +41,7 @@ gate.
 Hero product commit `12bc62b3ed175eaeaf4b87f24bebaa17b5598e0b`
 passed exact-SHA production verification through GitHub Actions run
 `29871593555` and deploy job `88775307755`. The polished product is technically
-verified and returned for human judgment; this is not owner acceptance.
+verified and subsequently accepted by the owner on 2026-07-22.
 
 ## Cut line
 

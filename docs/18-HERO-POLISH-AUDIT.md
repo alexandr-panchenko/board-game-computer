@@ -4,11 +4,11 @@ Date: **2026-07-21**
 
 Accepted technical baseline: `c4135308128c7b43f18ebeb53ef37083610959f7`
 
-Release state: **AWAITING OWNER PRODUCT APPROVAL**
+Release state: **OWNER PRODUCT APPROVED 2026-07-22**
 
 This is a product-presentation audit of the accepted Prism Foundry and
-room-as-program foundation. It is not another product reset and does not grant
-M9 approval.
+room-as-program foundation. The owner approved the resulting product on
+2026-07-22; M9 and the submission tag remain separate gates.
 
 ## Production playthrough before editing
 

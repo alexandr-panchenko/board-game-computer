@@ -3,7 +3,7 @@
 Date: **2026-07-21**  
 Rejected production baseline:
 `6fe6e435858a7d397636aaef4ebba3872b29a880`  
-Release gate: **AWAITING OWNER PRODUCT APPROVAL**
+Release gate: **OWNER PRODUCT APPROVED 2026-07-22**
 
 ## Decision
 
@@ -100,6 +100,10 @@ deployment. They cannot grant product acceptance. Until the owner explicitly
 accepts Prism Foundry, every status and release report must say:
 
 > **AWAITING OWNER PRODUCT APPROVAL**
+
+That gate was satisfied on 2026-07-22 when the owner explicitly accepted the
+deployed Prism Foundry replacement and final hero presentation. This approval
+does not by itself complete M9 or authorize the submission tag.
 
 ## Implementation record
 
