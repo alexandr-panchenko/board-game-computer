@@ -478,7 +478,30 @@ alter the frozen interpreter, game, AI, room, or deterministic judge semantics.
 - Original procedural vector/Graphics primitives only; no third-party or
   generated art assets were added.
 
-Pending evidence for this correction: committed SHA, CI/deploy run, exact
-production version, same-viewport production captures, live GPT-5.6 repeat, and
-deployed AI-disabled fallback. Record those only after the exact corrected
-commit is verified.
+- UX implementation commit
+  `d2ea30a46332f929ee80e96c489d673b78569662` and CI-stability commit
+  `f2d71300ebc1c0e21f9a7215551c03d9674fd079` are pushed to `main`.
+- GitHub Actions run
+  `https://github.com/alexandr-panchenko/board-game-computer/actions/runs/29830796839`
+  passed the full validation job and deployment job. Its production smoke
+  verified the exact `f2d7130` commit, `/judge` HTTP 200, and required security
+  headers.
+- Clean production Chromium checks passed for both `/` and `/judge` at
+  1440 × 900 and Pixel 7: statement, objective, board, and primary action were
+  visible within the viewport and no console-breaking errors occurred.
+- The exact production live path completed in 10,821 ms. Luna returned HTTP 200
+  from `gpt-5.6-luna`; Designer returned HTTP 200 from the deployed GPT-5.6
+  configuration; its blue-gate Scenario validated and committed locally, fired
+  on entering Azure Gate, and left the game playable. The browser recorded no
+  console errors. Screenshot:
+  `evidence/local/ux-production-live-complete.png` (gitignored).
+- The independent deployed labelled fallback completed in 3,910 ms, fired the
+  identical example rule, remained playable, and recorded no console errors.
+  Screenshot: `evidence/local/ux-production-fallback-complete.png` (gitignored).
+- Reviewed production layout captures are
+  `evidence/local/ux-production-desktop.png` and
+  `evidence/local/ux-production-mobile.png` (gitignored).
+
+This evidence does not complete M9. Owner-only eligibility, Session ID, video,
+submission copy/attestations, Devpost submission, and the final tag remain
+intentionally pending.

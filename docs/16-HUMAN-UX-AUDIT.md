@@ -316,3 +316,28 @@ At all three required viewports, the initial screen now answers:
 No answer requires scrolling or opening Advanced. The manual review therefore
 passes the specified comprehension test. External human judgment of taste,
 physical-device feel, and narrated-demo pacing still remains appropriate.
+
+## Production verification after correction
+
+The corrected build was deployed from exact commit
+`f2d71300ebc1c0e21f9a7215551c03d9674fd079` by passing GitHub Actions run
+`29830796839`. Clean Chromium checks of `/` and `/judge` passed at 1440 × 900
+and Pixel 7 with the statement, objective, board, and primary action inside the
+first viewport and no console errors.
+
+| Production desktop | Production mobile |
+| --- | --- |
+| ![Corrected production desktop](../evidence/local/ux-production-desktop.png) | ![Corrected production mobile](../evidence/local/ux-production-mobile.png) |
+
+The live production judge path completed with HTTP 200 from Luna and Designer;
+the returned rule validated, committed, visibly fired, and left the game
+playable. The independent labelled fallback completed the same path without an
+AI request. Both checks recorded zero console-breaking errors.
+
+| Live GPT-5.6 path complete | Labelled fallback complete |
+| --- | --- |
+| ![Live path complete](../evidence/local/ux-production-live-complete.png) | ![Fallback path complete](../evidence/local/ux-production-fallback-complete.png) |
+
+These captures are local, gitignored evidence and contain no credentials or
+room capability links. M9, the release tag, and owner-only submission artifacts
+remain explicitly out of scope for this correction.
