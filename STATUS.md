@@ -12,7 +12,7 @@ Last design review: **2026-07-21**
 | M5 — GPT-5.6 integration | complete | Local/live validation, production desktop/mobile paths, and GitHub Actions validate/deploy passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve validated AI and fallback behavior in the hero flow | `aab81ed` |
 | M6 — Complete hero/judge flow | complete | Local validation, CI, exact production version, live AI path, and deployed desktop/mobile checks passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve the literal judge path while adding persistence | `405fe3a` |
 | M7 — Persistent shared rooms and rebase | complete | Local validation, CI, exact production version, two-browser convergence/reload/fork passed 2026-07-21 | None known beyond the existing bundle warning | Preserve ordering and capability boundaries during hardening | `d9ebcda` |
-| M8 — Reliability, mobile, security, and production verification | in progress | Local/CI validation, apex exact-version smoke, 36-check production E2E, M7 rollback, and M8 restore passed 2026-07-21 | CI smoke URL follow-up must pass | Commit canonical URL fix, push, and verify CI/apex | `51dc131` |
+| M8 — Reliability, mobile, security, and production verification | in progress | Local/CI validation, apex exact-version smoke, 36-check production E2E, M7 rollback, and M8 restore passed 2026-07-21 | Bounded propagation-aware CI smoke follow-up must pass | Validate retry, push, and verify CI/apex | `51dc131`, URL fix `fb794ec` |
 | M9 — Evidence and release freeze | not started | — | No real evidence yet | Fill evidence, record video, tag release, submit | — |
 
 ## Current gate
@@ -21,8 +21,9 @@ Last design review: **2026-07-21**
 canonical apex passed exact-version/header smoke and all 36 production browser
 checks; rollback served exact M7, and restored M8 is again at 100% traffic. The
 first deploy job's smoke exposed that workers.dev is retired after custom-domain
-assignment. The final gate is to push the apex URL correction and verify its CI
-deployment/smoke before marking M8 complete.
+assignment; the second exposed a seconds-long edge propagation race. The final
+gate is to push the bounded-retry smoke correction and verify CI before marking
+M8 complete.
 
 ## Cut line
 

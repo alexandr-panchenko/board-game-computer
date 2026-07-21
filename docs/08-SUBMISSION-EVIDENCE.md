@@ -312,6 +312,11 @@ not evidence.
   `evidence/local/m8-production-mobile.png`, and
   `evidence/local/m8-production-budget-fallback.png`; none displays a room
   capability or secret.
+- Follow-up commit `fb794ec7c2d5079bb3fcc456e558d37fce06ffc4`
+  deployed as Cloudflare version `67a8c6bd-12ed-463d-ae8b-236b07788708` after
+  another clean CI validation. Its immediate smoke raced edge propagation; the
+  apex reported the exact follow-up commit seconds later. The smoke runner now
+  keeps every assertion but retries for a bounded 30-second propagation window.
 
 ## Requirements and judging evidence
 
