@@ -1,3 +1,6 @@
+import { useState } from "react";
+
+import { RoomRuntime } from "../runtime";
 import { APP_NAME, LANGUAGE_VERSION } from "../shared/versions";
 
 const rooms = [
@@ -11,6 +14,27 @@ const rooms = [
 
 export function App() {
   const isJudge = window.location.pathname === "/judge";
+  const [runtime] = useState(() => new RoomRuntime());
+  const [source, setSource] = useState(
+    'let score = 1; trace("score-created");',
+  );
+  const [message, setMessage] = useState("Ready for a reversible source cell.");
+  const [trace, setTrace] = useState("No trace recorded yet.");
+  const [, setRevision] = useState(0);
+
+  const refresh = () => setRevision((value) => value + 1);
+  const runCell = () => {
+    const result = runtime.executeCell(source);
+    setMessage(
+      result.ok
+        ? `Committed ${result.cellId}: ${String(result.forward.mutations.length)} reversible mutations.`
+        : `${result.diagnostic.code}: ${result.diagnostic.message}`,
+    );
+    setTrace(
+      result.ok ? JSON.stringify(result.forward.trace) : "Cell rolled back.",
+    );
+    refresh();
+  };
 
   return (
     <main className="app-shell">
@@ -72,14 +96,58 @@ export function App() {
 
         <aside className="panel inspector-panel">
           <h2>Chat & Inspector</h2>
-          <p>Runtime and AI integration arrive in later milestones.</p>
-          <h3>Legal actions</h3>
-          <button type="button" disabled>
-            Take control
-          </button>
-          <button type="button" disabled>
-            Next replay step
-          </button>
+          <p>Run one atomic cell, then inspect its deterministic state hash.</p>
+          <label className="source-label" htmlFor="runtime-source">
+            Reversible source cell
+          </label>
+          <textarea
+            id="runtime-source"
+            value={source}
+            onChange={(event) => setSource(event.target.value)}
+            spellCheck={false}
+          />
+          <div className="runtime-actions">
+            <button type="button" onClick={runCell}>
+              Run cell
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMessage(
+                  runtime.undo()
+                    ? "Applied inverse patch."
+                    : "Nothing to undo.",
+                );
+                refresh();
+              }}
+            >
+              Undo
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMessage(
+                  runtime.redo()
+                    ? "Applied forward patch."
+                    : "Nothing to redo.",
+                );
+                refresh();
+              }}
+            >
+              Redo
+            </button>
+          </div>
+          <p className="runtime-message" role="status">
+            {message}
+          </p>
+          <dl className="runtime-state">
+            <dt>State hash</dt>
+            <dd>{runtime.hash()}</dd>
+            <dt>Global bindings</dt>
+            <dd>{JSON.stringify(runtime.bindings())}</dd>
+            <dt>Trace</dt>
+            <dd>{trace}</dd>
+          </dl>
         </aside>
       </section>
 

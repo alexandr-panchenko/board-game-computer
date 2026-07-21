@@ -58,6 +58,30 @@ not evidence.
   undefined, `wrangler.jsonc` was corrected, full validation reran, and the
   repaired production route returned 200.
 
+### M3 — Reversible interpreter core
+
+- Date: 2026-07-21.
+- Runtime architecture: `src/runtime/{parser,validator,interpreter,store,sync}`
+  implements Acorn parsing and cached source spans, a capability-aware AST
+  allowlist, custom serializable values, transactional mutations, closures,
+  deterministic canonical hashing, exact forward/inverse patches, bounded
+  execution, and pending-tail rebase without native `eval`.
+- Focused validation passed: 12 runtime tests, 1 rollback test, 3 rebase tests,
+  and 1 determinism test. Covered exact undo/redo hashes, allocation and heap
+  rollback, fuel exhaustion, single-evaluation assignment semantics,
+  independent-runtime convergence, one-in-flight proposal ordering, and
+  authoritative rebase conflicts.
+- Full `bun run validate` passed: 15 unit tests, 2 Workers tests, 4 Playwright
+  tests across desktop/mobile, production build, 69-file-plus-bundle secret
+  scan, and 27-direct-dependency license scan.
+- Synthetic replay benchmark: 500 increment cells executed in 75.61 ms and
+  produced final state hash `c8c7e146d750ee99` on the development machine,
+  below the provisional 3,000 ms desktop gate.
+- Runtime inspector evidence: `evidence/local/m3-runtime-inspector.png`
+  (gitignored local artifact); desktop and mobile Playwright both verified
+  commit, inverse-patch undo, and forward-patch redo through `/judge`.
+- Implementation commit: `<pending implementation commit>`.
+
 ## Requirements and judging evidence
 
 | Status | Requirement / criterion | Claim to verify | Exact evidence required | URL/file/video timestamp | Verification method |

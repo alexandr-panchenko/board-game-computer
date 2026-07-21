@@ -95,8 +95,56 @@ button:disabled {
   font-size: 13px;
 }
 .inspector-panel button {
-  width: 100%;
   margin-top: 10px;
+}
+.source-label {
+  display: block;
+  margin: 18px 0 8px;
+  color: #75d7b4;
+  font-size: 13px;
+  font-weight: 700;
+}
+.inspector-panel textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  border: 1px solid #4c665a;
+  border-radius: 10px;
+  padding: 10px;
+  color: #edf4ef;
+  background: #0d171b;
+  font:
+    13px/1.5 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+}
+.inspector-panel textarea:focus-visible {
+  outline: 3px solid #65d6b0;
+  outline-offset: 2px;
+}
+.runtime-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+.runtime-message {
+  min-height: 42px;
+  color: #c5d7d0;
+  font-size: 13px;
+}
+.runtime-state {
+  margin: 0;
+  font-size: 12px;
+}
+.runtime-state dt {
+  margin-top: 10px;
+  color: #91a2af;
+}
+.runtime-state dd {
+  overflow-wrap: anywhere;
+  margin: 3px 0 0;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 .table-panel {
   min-width: 0;
