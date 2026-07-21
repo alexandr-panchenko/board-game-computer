@@ -10,20 +10,19 @@ Last design review: **2026-07-21**
 | M3 — Reversible interpreter core | complete | Full M3 command matrix and `bun run validate` passed 2026-07-21 | Optional callback array methods remain intentionally cut per M3 fallback | Preserve runtime invariants while building the table framework | `f902c0a` |
 | M4 — Table framework and complete deterministic sample | complete | Local validation, production desktop/mobile gameplay, and GitHub Actions validate/deploy passed 2026-07-21 | Pixi bundle emits a non-blocking >500 kB chunk warning | Preserve the deterministic game while adding server-side AI | `e5732aa` |
 | M5 — GPT-5.6 integration | complete | Local/live validation, production desktop/mobile paths, and GitHub Actions validate/deploy passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve validated AI and fallback behavior in the hero flow | `aab81ed` |
-| M6 — Complete hero/judge flow | in progress | Full local validation passed 2026-07-21 | Production deployment/verification pending | Commit, deploy, and verify exact production build | — |
-| M7 — Persistent shared rooms and rebase | not started | — | May be cut only at the documented cut line | Durable Object storage, two clients, reconnect, fork | — |
+| M6 — Complete hero/judge flow | complete | Local validation, CI, exact production version, live AI path, and deployed desktop/mobile checks passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve the literal judge path while adding persistence | `405fe3a` |
+| M7 — Persistent shared rooms and rebase | in progress | M6 production gate passed | May be cut only at the documented cut line | Durable Object storage, two clients, reconnect, fork | — |
 | M8 — Reliability, mobile, security, and production verification | not started | — | Production behavior unknown | Complete fallbacks, budgets, E2E, clean-browser QA | — |
 | M9 — Evidence and release freeze | not started | — | No real evidence yet | Fill evidence, record video, tag release, submit | — |
 
 ## Current gate
 
-**M6 IMPLEMENTATION COMPLETE; PRODUCTION GATE IN PROGRESS.** Guided replay,
-takeover, a registered human action, Luna/fallback turn, validated Designer
-rule, real Scenario trigger, reset/replay/fresh controls, and continued play to
-real endings now form one literal path. Full local validation passed 46 unit,
-8 Worker, and 24 desktop/mobile browser tests plus build, secret, and license
-checks. The milestone remains in progress until its exact commit is deployed
-and manually verified with live AI.
+**M7 IN PROGRESS.** M6 commit `405fe3a` passed local validation and GitHub
+Actions validation/deployment; production reports the exact commit. Ten
+deployed desktop/mobile checks passed, and the full integrated live path used
+Luna and Designer, fired the real Scenario, and reached its completed hero
+state in 9.8 seconds. The active gate is persistent shared rooms, two-client
+ordering/rebase, reconnect, replay timeline, and prefix fork.
 
 ## Cut line
 

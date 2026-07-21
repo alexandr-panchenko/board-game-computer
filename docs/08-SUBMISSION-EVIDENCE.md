@@ -202,8 +202,24 @@ not evidence.
 - Local visual review passed at
   `evidence/local/m6-guided-desktop.png` and
   `evidence/local/m6-guided-mobile.png` (gitignored local artifacts).
-- Production implementation commit, CI run, exact-version verification, and
-  live integrated Sol/Luna outcome: pending deployment.
+- Implementation commit: `405fe3a733342a402932fd4528207fbd043a8d03`
+  (pushed to `origin/main`).
+- GitHub Actions run:
+  `https://github.com/alexandr-panchenko/board-game-computer/actions/runs/29808226706`;
+  both `validate` and `deploy` jobs completed successfully.
+- Production `/api/version` reported the exact implementation commit;
+  `/api/health`, `/api/room-health`, and `/api/ai/status` passed. AI status
+  reported enabled Designer `gpt-5.6`, Player `gpt-5.6-luna`, and labelled
+  fallback availability without exposing secret material.
+- Ten production Playwright checks passed across desktop/mobile: useful shell
+  before AI, equivalent `/`, mocked complete hero flow, reset/replay/fresh, and
+  AI-disabled fallback/example completion.
+- A bounded live production browser run used one Luna request and one Designer
+  request, completed the literal path in 9,764 ms, and ended with
+  `entity-entered-zone → scenario: Blue gate rotates its linked room →
+  room-rotated`. The final state remained playable at Round 4, Threat 5.
+- Production visual evidence:
+  `evidence/local/m6-production-live-complete.png` (gitignored local artifact).
 
 ## Requirements and judging evidence
 

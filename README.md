@@ -3,20 +3,20 @@
 > **Working title.** Describe, play, and rewrite a board game in one shared
 > room—people and GPT-5.6 operate the same safe, reversible tabletop language.
 
-**Build Week status:** Milestone 6 is locally complete and awaiting its
-production gate. The repository now combines the reversible interpreter,
-complete deterministic `Shifting Vaults`, server-only GPT-5.6 Designer and
-Luna paths, guided replay, takeover, triggered live rule, real endings, and
-deterministic fallbacks. Persistent collaboration remains milestone work.
+**Build Week status:** Milestone 6 is deployed and production-verified. The
+repository now combines the reversible interpreter, complete deterministic
+`Shifting Vaults`, server-only GPT-5.6 Designer and Luna paths, guided replay,
+takeover, triggered live rule, real endings, and deterministic fallbacks.
+Persistent collaboration is the active milestone.
 
 ## Live demo
 
 - Main: <https://board-game-computer.sanocks.workers.dev/>
 - Judge route: <https://board-game-computer.sanocks.workers.dev/judge>
-- Current status: **M6 complete locally; production deployment/verification
-  pending**
+- Current status: **M6 complete and production-verified; M7 persistent shared
+  rooms in progress**
 
-The release candidate proves the complete end-to-end sequence on desktop and
+The deployed build proves the complete end-to-end sequence on desktop and
 mobile, including a strict GPT-authored rule boundary, AI-seat selection,
 budget guard, and labelled fallback.
 

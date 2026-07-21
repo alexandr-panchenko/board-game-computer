@@ -7,8 +7,8 @@
 - User API key: not required
 - Best path: desktop or mobile modern browser
 
-Current release-candidate status: the complete M6 path below passes locally on
-desktop and minimum mobile viewports. Production verification is recorded in
+Current production status: the complete M6 path below is deployed and verified
+on desktop and minimum mobile viewports. Production evidence is recorded in
 `docs/08-SUBMISSION-EVIDENCE.md`; persistent shared rooms remain M7 work.
 
 ## Literal 60–90 second path
