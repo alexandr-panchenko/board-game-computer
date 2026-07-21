@@ -3,17 +3,17 @@
 > **Working title.** Describe, play, and rewrite a board game in one shared
 > room—people and GPT-5.6 operate the same safe, reversible tabletop language.
 
-**Build Week status:** Milestone 7 is locally complete and awaiting its
-production gate. The repository now also includes capability-linked persistent
-rooms, hibernatable WebSockets, one-in-flight optimistic rebase, reconnect,
-patch timeline, and persistent prefix forks.
+**Build Week status:** Milestone 7 is deployed and production-verified. The
+repository now also includes capability-linked persistent rooms, hibernatable
+WebSockets, one-in-flight optimistic rebase, reconnect, patch timeline, and
+persistent prefix forks. Reliability/security hardening is the active gate.
 
 ## Live demo
 
 - Main: <https://board-game-computer.sanocks.workers.dev/>
 - Judge route: <https://board-game-computer.sanocks.workers.dev/judge>
-- Current status: **M7 complete locally; production deployment/verification
-  pending**
+- Current status: **M7 complete and production-verified; M8 hardening in
+  progress**
 
 The deployed build proves the complete end-to-end sequence on desktop and
 mobile, including a strict GPT-authored rule boundary, AI-seat selection,

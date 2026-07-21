@@ -8,8 +8,9 @@
 - Best path: desktop or mobile modern browser
 
 Current production status: the complete M6 path below is deployed and verified
-on desktop and minimum mobile viewports. Production evidence is recorded in
-`docs/08-SUBMISSION-EVIDENCE.md`; persistent shared rooms remain M7 work.
+on desktop and minimum mobile viewports. The optional M7 persistent-room proof
+is also deployed and verified. Production evidence is recorded in
+`docs/08-SUBMISSION-EVIDENCE.md`.
 
 ## Literal 60–90 second path
 

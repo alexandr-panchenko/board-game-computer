@@ -11,20 +11,18 @@ Last design review: **2026-07-21**
 | M4 — Table framework and complete deterministic sample | complete | Local validation, production desktop/mobile gameplay, and GitHub Actions validate/deploy passed 2026-07-21 | Pixi bundle emits a non-blocking >500 kB chunk warning | Preserve the deterministic game while adding server-side AI | `e5732aa` |
 | M5 — GPT-5.6 integration | complete | Local/live validation, production desktop/mobile paths, and GitHub Actions validate/deploy passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve validated AI and fallback behavior in the hero flow | `aab81ed` |
 | M6 — Complete hero/judge flow | complete | Local validation, CI, exact production version, live AI path, and deployed desktop/mobile checks passed 2026-07-21 | None known beyond the existing Pixi bundle warning | Preserve the literal judge path while adding persistence | `405fe3a` |
-| M7 — Persistent shared rooms and rebase | in progress | Full local validation passed 2026-07-21 | Production deployment/verification pending | Commit, deploy, and verify exact production build | — |
-| M8 — Reliability, mobile, security, and production verification | not started | — | Production behavior unknown | Complete fallbacks, budgets, E2E, clean-browser QA | — |
+| M7 — Persistent shared rooms and rebase | complete | Local validation, CI, exact production version, two-browser convergence/reload/fork passed 2026-07-21 | None known beyond the existing bundle warning | Preserve ordering and capability boundaries during hardening | `d9ebcda` |
+| M8 — Reliability, mobile, security, and production verification | in progress | M7 production gate passed | Production custom-domain readiness still to verify | Complete fallbacks, budgets, headers, clean-browser/mobile QA | — |
 | M9 — Evidence and release freeze | not started | — | No real evidence yet | Fill evidence, record video, tag release, submit | — |
 
 ## Current gate
 
-**M7 IMPLEMENTATION COMPLETE; PRODUCTION GATE IN PROGRESS.** Random room and
-capability creation, hash-only capability storage, SQLite cells/head metadata,
-strict exact-head ordering, idempotency, Hibernatable WebSockets, one-in-flight
-pending queues, patch-only rebase, divergence recovery, reconnect, local patch
-timeline, Player link, and persistent prefix fork are implemented. Full local
-validation passed 49 unit, 13 Worker, and 32 desktop/mobile browser tests plus
-build, secret, and license checks. The milestone remains in progress until its
-exact commit is deployed and verified with two production browser contexts.
+**M8 IN PROGRESS.** M7 commit `d9ebcda` passed local validation and GitHub
+Actions validation/deployment; production reports the exact commit. A real
+Designer desktop and Player mobile context converged at sequence 1 and the same
+hash, Player reload recovered the tail, and a prefix fork left the parent
+unchanged. The active gate is reliability, security headers/limits, mobile and
+clean-browser QA, custom-domain readiness, and production verification.
 
 ## Cut line
 

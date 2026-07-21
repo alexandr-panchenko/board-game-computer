@@ -256,8 +256,25 @@ not evidence.
 - Local visual review passed at `evidence/local/m7-shared-desktop.png` and
   `evidence/local/m7-shared-mobile.png` (gitignored local artifacts); neither
   image contains a capability secret.
-- Production implementation commit, CI run, exact-version verification,
-  two-browser convergence, reload, and fork URLs: pending deployment.
+- Implementation commit: `d9ebcda5d5f2c6c4b3745a441ed14d7396b204f2`
+  (pushed to `origin/main`).
+- GitHub Actions run:
+  `https://github.com/alexandr-panchenko/board-game-computer/actions/runs/29810660286`;
+  both `validate` and `deploy` jobs completed successfully.
+- Production `/api/version` reported the exact implementation commit;
+  `/api/health` and SQLite `/api/room-health` passed.
+- Production parent room ID `0198546d-0a38-41e2-9540-d4a4045f045b` joined a
+  Designer desktop and Player mobile browser context. One registered move
+  committed at sequence 1 and both converged to state hash
+  `3c6aed5f00e52d55`; Player reload recovered sequence 1 and the same hash.
+- Fork room ID `fcf7d71c-7d63-4e48-a0b6-46167fa98acf` was created from prefix
+  0 with new capabilities. Returning the parent live restored its sequence-1
+  hash, proving the parent remained unchanged. No raw capability URL was logged
+  or recorded.
+- Production visual evidence:
+  `evidence/local/m7-production-designer.png` and
+  `evidence/local/m7-production-player-mobile.png` (gitignored local artifacts,
+  visually reviewed without capability text).
 
 ## Requirements and judging evidence
 
